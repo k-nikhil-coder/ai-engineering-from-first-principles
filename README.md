@@ -37,7 +37,11 @@ Visit `http://localhost:5173/` in your browser.
 
 ## 📦 One-Click Vercel Deployment
 
-Deploy this documentation hub and interactive simulator to Vercel in seconds:
+Deploy this documentation hub and interactive simulator to Vercel in seconds with zero configuration:
+
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fk-nikhil-coder%2Fai-engineering-from-first-principles)
+
+Or deploy via terminal:
 
 ```bash
 npx vercel
