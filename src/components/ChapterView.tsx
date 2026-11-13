@@ -232,9 +232,16 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
 
             <div className="code-block-wrapper">
               <div className="code-header">
-                <div className="flex items-center gap-2">
-                  <FileCode size={14} className="text-muted" />
-                  <span>{chapter.codeImplementation.title}</span>
+                <div className="flex items-center gap-3">
+                  <div className="mac-window-dots" aria-hidden="true">
+                    <span className="mac-dot mac-dot-close" />
+                    <span className="mac-dot mac-dot-minimize" />
+                    <span className="mac-dot mac-dot-maximize" />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <FileCode size={13} className="text-muted" />
+                    <span className="code-file-title">{chapter.codeImplementation.title}</span>
+                  </div>
                 </div>
                 <span className="code-lang">{chapter.codeImplementation.language}</span>
               </div>
@@ -518,7 +525,14 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
                 {/* Starter Code */}
                 <div className="lab-code-section">
                   <div className="lab-code-header">
-                    <span>Starter Template (Python 3.11+)</span>
+                    <div className="flex items-center gap-3">
+                      <div className="mac-window-dots" aria-hidden="true">
+                        <span className="mac-dot mac-dot-close" />
+                        <span className="mac-dot mac-dot-minimize" />
+                        <span className="mac-dot mac-dot-maximize" />
+                      </div>
+                      <span>Starter Template (Python 3.11+)</span>
+                    </div>
                     <button
                       onClick={() => handleCopy(chapter.labs!.problemA.starterCode, 'starter-a')}
                       className="copy-btn sm"
@@ -545,7 +559,14 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
                   {showSolutionA && (
                     <div className="solution-drawer">
                       <div className="lab-code-header">
-                        <span className="text-emerald-400">Complete Production Solution</span>
+                        <div className="flex items-center gap-3">
+                          <div className="mac-window-dots" aria-hidden="true">
+                            <span className="mac-dot mac-dot-close" />
+                            <span className="mac-dot mac-dot-minimize" />
+                            <span className="mac-dot mac-dot-maximize" />
+                          </div>
+                          <span className="text-emerald-400">Complete Production Solution</span>
+                        </div>
                         <button
                           onClick={() => handleCopy(chapter.labs!.problemA.solutionCode, 'solution-a')}
                           className="copy-btn sm"
@@ -609,7 +630,14 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
                 {/* Buggy Snippet */}
                 <div className="lab-code-section">
                   <div className="lab-code-header buggy">
-                    <span className="text-rose-400">Broken Production Code (Contains Vulnerability / Bug)</span>
+                    <div className="flex items-center gap-3">
+                      <div className="mac-window-dots" aria-hidden="true">
+                        <span className="mac-dot mac-dot-close" />
+                        <span className="mac-dot mac-dot-minimize" />
+                        <span className="mac-dot mac-dot-maximize" />
+                      </div>
+                      <span className="text-rose-400">Broken Production Code (Contains Vulnerability / Bug)</span>
+                    </div>
                     <button
                       onClick={() => handleCopy(chapter.labs!.problemB.starterCode, 'starter-b')}
                       className="copy-btn sm"
@@ -636,7 +664,14 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
                   {showSolutionB && (
                     <div className="solution-drawer">
                       <div className="lab-code-header fixed">
-                        <span className="text-emerald-400">Hardened Production Fix</span>
+                        <div className="flex items-center gap-3">
+                          <div className="mac-window-dots" aria-hidden="true">
+                            <span className="mac-dot mac-dot-close" />
+                            <span className="mac-dot mac-dot-minimize" />
+                            <span className="mac-dot mac-dot-maximize" />
+                          </div>
+                          <span className="text-emerald-400">Hardened Production Fix</span>
+                        </div>
                         <button
                           onClick={() => handleCopy(chapter.labs!.problemB.solutionCode, 'solution-b')}
                           className="copy-btn sm"

@@ -16,28 +16,32 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleTheme,
   onGoHome
 }) => {
+  const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPod|iPad/.test(navigator.userAgent);
+
   return (
     <header className="site-header">
       <div className="header-left">
         <button className="menu-btn" onClick={onToggleSidebar} title="Toggle Sidebar">
-          <Menu size={20} />
+          <Menu size={18} />
         </button>
-        <div className="brand" onClick={onGoHome} role="button" tabIndex={0}>
+        <div className="brand" onClick={onGoHome} role="button" tabIndex={0} title="Home Syllabus">
           <div className="brand-logo">
-            <Sparkles size={18} className="text-emerald-400" />
+            <Sparkles size={16} className="brand-sparkle" />
           </div>
           <div className="brand-text">
             <span className="brand-title">AI Engineer</span>
-            <span className="brand-sub">from first principles</span>
+            <span className="brand-sub">From First Principles</span>
           </div>
         </div>
       </div>
 
       <div className="header-center">
         <button className="search-trigger-btn" onClick={onOpenSearch}>
-          <Search size={16} className="text-muted" />
-          <span className="search-placeholder">Quick search 36 chapters & labs...</span>
-          <kbd className="search-kbd">Ctrl K</kbd>
+          <div className="flex items-center gap-2">
+            <Search size={14} className="text-muted" />
+            <span className="search-placeholder">Quick search 36 chapters & labs...</span>
+          </div>
+          <kbd className="search-kbd">{isMac ? '⌘K' : 'Ctrl K'}</kbd>
         </button>
       </div>
 
@@ -45,9 +49,10 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           className="icon-action-btn"
           onClick={onToggleTheme}
-          title={theme === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'}
+          title={theme === 'dark' ? 'Switch to warm light theme' : 'Switch to dark theme'}
+          aria-label="Toggle theme"
         >
-          {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
         </button>
 
         <a
@@ -56,8 +61,9 @@ export const Header: React.FC<HeaderProps> = ({
           rel="noopener noreferrer"
           className="icon-action-btn github-link"
           title="Curriculum Inspiration & Repos"
+          aria-label="GitHub Repository"
         >
-          <GitBranch size={18} />
+          <GitBranch size={16} />
         </a>
       </div>
     </header>
