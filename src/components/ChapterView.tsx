@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Chapter, TargetRole } from '../types/curriculum';
 import { getAdjacentChapters } from '../data/curriculum';
 import { InteractiveTools } from './InteractiveTools';
@@ -10,22 +10,24 @@ import {
   AlertTriangle, 
   Lightbulb, 
   ChevronLeft, 
-  ChevronRight,
-  Code,
-  HelpCircle,
-  FileCode,
-  BookOpen,
-  Video,
-  Cpu,
-  Terminal,
-  ExternalLink,
-  ChevronDown,
-  ChevronUp,
-  Bug,
-  CheckCircle2,
-  Clock,
-  Sparkles,
-  Play
+  ChevronRight, 
+  Code, 
+  HelpCircle, 
+  FileCode, 
+  BookOpen, 
+  Video, 
+  Cpu, 
+  Terminal, 
+  ExternalLink, 
+  ChevronDown, 
+  ChevronUp, 
+  Bug, 
+  CheckCircle2, 
+  Clock, 
+  Sparkles, 
+  Play,
+  Bookmark,
+  Hash
 } from 'lucide-react';
 
 interface ChapterViewProps {
@@ -56,12 +58,67 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
   const [activeTab, setActiveTab] = useState<TabType>('read');
   const [copiedCode, setCopiedCode] = useState<string | null>(null);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<number, number>>({});
+  const [scrollProgress, setScrollProgress] = useState<number>(0);
   
   // Accordions for solutions
   const [showSolutionA, setShowSolutionA] = useState<boolean>(false);
   const [showSolutionB, setShowSolutionB] = useState<boolean>(false);
 
   const { prev, next } = getAdjacentChapters(chapter.id, activeRole);
+
+  // Scroll Progress Calculator
+  useEffect(() => {
+    const handleScroll = () => {
+      const totalScroll = document.documentElement.scrollHeight - window.innerHeight;
+      if (totalScroll > 0) {
+        const currentProgress = (window.scrollY / totalScroll) * 100;
+        setScrollProgress(Math.min(100, Math.max(0, currentProgress)));
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    handleScroll();
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [chapter.id, activeTab]);
+
+  // Reset tab and scroll position when chapter changes
+  useEffect(() => {
+    setSelectedAnswers({});
+    setShowSolutionA(false);
+    setShowSolutionB(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [chapter.id]);
+
+  // Keyboard navigation shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName) || (e.target as HTMLElement)?.isContentEditable) {
+        return;
+      }
+
+      if (e.key === '[' && prev) {
+        e.preventDefault();
+        onSelectChapter(prev.id);
+      } else if (e.key === ']' && next) {
+        e.preventDefault();
+        onSelectChapter(next.id);
+      } else if (e.key === 'm' || e.key === 'M') {
+        e.preventDefault();
+        onToggleRead(chapter.id);
+      } else if (e.key === '1') {
+        setActiveTab('read');
+      } else if (e.key === '2') {
+        setActiveTab('watch');
+      } else if (e.key === '3') {
+        setActiveTab('explore');
+      } else if (e.key === '4') {
+        setActiveTab('solve');
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [chapter.id, prev, next, onSelectChapter, onToggleRead]);
 
   const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
@@ -71,6 +128,13 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
 
   const handleSelectOption = (questionIdx: number, optionIdx: number) => {
     setSelectedAnswers(prev => ({ ...prev, [questionIdx]: optionIdx }));
+  };
+
+  const scrollToSection = (id: string) => {
+    const el = document.getElementById(id);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
   };
 
   const roleLabelMap: Record<TargetRole, string> = {
@@ -87,7 +151,54 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
 
   return (
     <article className="chapter-article">
-      {/* Chapter Top Header */}
+      {/* Scroll Reading Progress Line */}
+      <div
+        className="reading-scroll-progress-line"
+        style={{ width: `${scrollProgress}%` }}
+        aria-hidden="true"
+      />
+
+      {/* Chapter Top Breadcrumb Navigation */}
+      <nav className="chapter-breadcrumbs" aria-label="Breadcrumb navigation">
+        <div className="breadcrumb-trail">
+          <button
+            onClick={() => {
+              window.location.hash = 'overview';
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="crumb-link"
+          >
+            Curriculum
+          </button>
+          <span className="crumb-separator">/</span>
+          <span className="crumb-module">Track {chapter.trackNumber}: {chapter.moduleName}</span>
+          <span className="crumb-separator">/</span>
+          <span className="crumb-current">Chapter {chapter.number}</span>
+        </div>
+
+        <div className="breadcrumb-actions">
+          {prev && (
+            <button
+              onClick={() => onSelectChapter(prev.id)}
+              className="crumb-nav-btn"
+              title="Previous Chapter (Press [)"
+            >
+              <ChevronLeft size={14} /> Prev
+            </button>
+          )}
+          {next && (
+            <button
+              onClick={() => onSelectChapter(next.id)}
+              className="crumb-nav-btn"
+              title="Next Chapter (Press ])"
+            >
+              Next <ChevronRight size={14} />
+            </button>
+          )}
+        </div>
+      </nav>
+
+      {/* Chapter Header */}
       <header className="chapter-header">
         <div className="chapter-meta-row">
           <div className="flex items-center gap-2 flex-wrap">
@@ -103,6 +214,7 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
           <button
             onClick={() => onToggleRead(chapter.id)}
             className={`read-toggle-btn ${isRead ? 'read' : ''}`}
+            title="Toggle read status (Press M)"
           >
             {isRead ? (
               <>
@@ -120,6 +232,7 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
           <span className="chapter-number">{chapter.number}</span> {chapter.title}
         </h1>
 
+        {/* Claude Literary Motto Box */}
         <div className="chapter-motto-box">
           <Lightbulb className="motto-icon" size={20} />
           <blockquote>"{chapter.motto}"</blockquote>
@@ -130,6 +243,7 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
           <button
             className={`chapter-tab-btn ${activeTab === 'read' ? 'active' : ''}`}
             onClick={() => setActiveTab('read')}
+            title="Read Theory & Implementation (Key 1)"
           >
             <BookOpen size={16} />
             <span>1. First Principles (Read)</span>
@@ -139,6 +253,7 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
           <button
             className={`chapter-tab-btn ${activeTab === 'watch' ? 'active' : ''}`}
             onClick={() => setActiveTab('watch')}
+            title="Curated Engineering Talks (Key 2)"
           >
             <Video size={16} />
             <span>2. Curated Lectures (Watch)</span>
@@ -150,6 +265,7 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
           <button
             className={`chapter-tab-btn ${activeTab === 'explore' ? 'active' : ''}`}
             onClick={() => setActiveTab('explore')}
+            title="Interactive Simulator Sandbox (Key 3)"
           >
             <Cpu size={16} />
             <span>3. Interactive Simulator (Explore)</span>
@@ -161,6 +277,7 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
           <button
             className={`chapter-tab-btn ${activeTab === 'solve' ? 'active' : ''}`}
             onClick={() => setActiveTab('solve')}
+            title="Algorithmic & Debugging Labs (Key 4)"
           >
             <Terminal size={16} />
             <span>4. Problems & Labs (Solve)</span>
@@ -169,6 +286,23 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
             </span>
           </button>
         </nav>
+
+        {/* In-Page Jump Bar (Floating Sections in Read Mode) */}
+        {activeTab === 'read' && (
+          <div className="in-page-toc-pill-bar" aria-label="Quick section jumps">
+            <span className="toc-bar-label">
+              <Hash size={12} /> Sections:
+            </span>
+            <button onClick={() => scrollToSection('sec-problem')} className="toc-jump-btn">Problem</button>
+            <button onClick={() => scrollToSection('sec-concepts')} className="toc-jump-btn">Concepts & Math</button>
+            <button onClick={() => scrollToSection('sec-code')} className="toc-jump-btn">Implementation</button>
+            <button onClick={() => scrollToSection('sec-pitfalls')} className="toc-jump-btn">Pitfalls</button>
+            <button onClick={() => scrollToSection('sec-takeaways')} className="toc-jump-btn">Takeaways</button>
+            {chapter.quiz && chapter.quiz.length > 0 && (
+              <button onClick={() => scrollToSection('sec-quiz')} className="toc-jump-btn">Checkpoint</button>
+            )}
+          </div>
+        )}
       </header>
 
       {/* =========================================================================
@@ -177,7 +311,7 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
       {activeTab === 'read' && (
         <div className="chapter-tab-content tab-read">
           {/* Problem Statement Callout */}
-          <section className="chapter-section problem-box">
+          <section id="sec-problem" className="chapter-section problem-box">
             <div className="section-title-row">
               <AlertTriangle className="text-amber-400" size={18} />
               <h3>The Problem & Common False Assumptions</h3>
@@ -186,7 +320,7 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
           </section>
 
           {/* Core Concepts */}
-          <section className="chapter-section">
+          <section id="sec-concepts" className="chapter-section">
             <h2 className="section-heading">First-Principles Concepts</h2>
             {chapter.coreConcepts.map((concept, idx) => (
               <div key={idx} className="concept-card">
@@ -215,7 +349,7 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
           </section>
 
           {/* Code Implementation */}
-          <section className="chapter-section">
+          <section id="sec-code" className="chapter-section">
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
                 <Code className="text-emerald-400" size={20} />
@@ -224,6 +358,7 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
               <button 
                 onClick={() => handleCopy(chapter.codeImplementation.code, 'main-code')} 
                 className="copy-btn"
+                title="Copy full runnable code"
               >
                 {copiedCode === 'main-code' ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
                 {copiedCode === 'main-code' ? "Copied!" : "Copy Code"}
@@ -255,7 +390,7 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
           </section>
 
           {/* Production Pitfalls */}
-          <section className="chapter-section pitfalls-box">
+          <section id="sec-pitfalls" className="chapter-section pitfalls-box">
             <div className="section-title-row">
               <AlertTriangle className="text-rose-400" size={18} />
               <h3>Production Pitfalls & Hard Truths</h3>
@@ -268,7 +403,7 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
           </section>
 
           {/* Key Takeaways */}
-          <section className="chapter-section takeaways-box">
+          <section id="sec-takeaways" className="chapter-section takeaways-box">
             <h3 className="takeaways-title">Key Engineering Takeaways</h3>
             <ul className="takeaways-list">
               {chapter.keyTakeaways.map((takeaway, i) => (
@@ -279,13 +414,13 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
 
           {/* Interactive Quiz */}
           {chapter.quiz && chapter.quiz.length > 0 && (
-            <section className="chapter-section quiz-section">
+            <section id="sec-quiz" className="chapter-section quiz-section">
               <div className="section-title-row">
                 <HelpCircle className="text-emerald-400" size={20} />
                 <h2 className="section-heading" style={{ margin: 0 }}>Self-Assessment Checkpoint</h2>
               </div>
               <p className="text-muted text-sm mb-4">
-                Test your first-principles understanding before moving to the next chapter.
+                Test your first-principles understanding before advancing to the next module.
               </p>
 
               {chapter.quiz.map((q, qIdx) => {
@@ -696,34 +831,51 @@ export const ChapterView: React.FC<ChapterViewProps> = ({
         </div>
       )}
 
-      {/* Bottom Chapter Navigation */}
+      {/* Bottom Chapter Navigation Footer */}
       <nav className="chapter-nav-footer">
         {prev ? (
           <button
             onClick={() => onSelectChapter(prev.id)}
             className="nav-btn prev"
+            title="Navigate to previous chapter (Press [)"
           >
             <ChevronLeft size={18} />
             <div className="nav-btn-text">
-              <span className="nav-label">Previous Chapter</span>
+              <span className="nav-label">Previous Chapter <kbd className="mini-kbd">[</kbd></span>
               <span className="nav-title">{prev.number} {prev.title}</span>
             </div>
           </button>
         ) : <div />}
 
+        <div className="nav-center-action">
+          <button
+            onClick={() => onToggleRead(chapter.id)}
+            className={`btn-primary sm ${isRead ? 'completed' : ''}`}
+            title="Mark as read / complete (Press M)"
+          >
+            {isRead ? <CheckCircle size={14} /> : <Bookmark size={14} />}
+            <span>{isRead ? 'Completed' : 'Mark as Complete'}</span>
+          </button>
+        </div>
+
         {next ? (
           <button
             onClick={() => onSelectChapter(next.id)}
             className="nav-btn next"
+            title="Navigate to next chapter (Press ])"
           >
             <div className="nav-btn-text text-right">
-              <span className="nav-label">Next Chapter</span>
+              <span className="nav-label">Next Chapter <kbd className="mini-kbd">]</kbd></span>
               <span className="nav-title">{next.number} {next.title}</span>
             </div>
             <ChevronRight size={18} />
           </button>
         ) : <div />}
       </nav>
+
+      <div className="footer-keyboard-hint">
+        <span>Keyboard shortcuts: <kbd>[</kbd> Prev chapter · <kbd>]</kbd> Next chapter · <kbd>M</kbd> Mark complete · <kbd>1-4</kbd> Switch tabs</span>
+      </div>
     </article>
   );
 };

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import type { TargetRole } from '../types/curriculum';
 import { MODULES, ALL_CHAPTERS, filterChaptersByRole } from '../data/curriculum';
 import { 
@@ -17,7 +17,10 @@ import {
   Compass, 
   X,
   Video,
-  Check
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Trophy
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -30,6 +33,7 @@ interface SidebarProps {
   solvedProblems: Set<string>;
   activeRole: TargetRole | 'all';
   onSelectRole: (role: TargetRole | 'all') => void;
+  onOpenTracker?: () => void;
   isOpen: boolean;
   onClose: () => void;
 }
@@ -44,12 +48,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
   solvedProblems,
   activeRole,
   onSelectRole,
+  onOpenTracker,
   isOpen,
   onClose
 }) => {
   const filteredChapters = filterChaptersByRole(activeRole);
   const totalChapters = filteredChapters.length;
   
+  // Track collapsed modules state
+  const [collapsedModules, setCollapsedModules] = useState<Set<string>>(new Set());
+
+  // Automatically expand the module containing currentChapterId
+  useEffect(() => {
+    if (currentChapterId) {
+      const activeCh = ALL_CHAPTERS.find(c => c.id === currentChapterId);
+      if (activeCh && collapsedModules.has(activeCh.moduleId)) {
+        setCollapsedModules(prev => {
+          const next = new Set(prev);
+          next.delete(activeCh.moduleId);
+          return next;
+        });
+      }
+    }
+  }, [currentChapterId]);
+
+  const toggleModule = (modId: string) => {
+    setCollapsedModules(prev => {
+      const next = new Set(prev);
+      if (next.has(modId)) {
+        next.delete(modId);
+      } else {
+        next.add(modId);
+      }
+      return next;
+    });
+  };
+
   // Calculate stats for current role filter
   const readCount = filteredChapters.filter(c => readChapters.has(c.id)).length;
   const readPercent = totalChapters > 0 ? Math.round((readCount / totalChapters) * 100) : 0;
@@ -144,9 +178,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
 
           {/* Multi-Metric Progress Tracker */}
-          <div className="progress-container">
+          <div className="sidebar-progress-box">
             <div className="progress-label">
-              <span>Read Progress</span>
+              <span>Read Mastery</span>
               <span className="text-emerald-400 font-mono font-medium">{readCount} / {totalChapters} ({readPercent}%)</span>
             </div>
             <div className="progress-track">
@@ -166,10 +200,21 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 <span>Solved: <strong>{solvedCount}/{totalProblems}</strong></span>
               </div>
             </div>
+
+            {onOpenTracker && (
+              <button
+                className="btn-sidebar-tracker"
+                onClick={onOpenTracker}
+                title="Open Comprehensive Progress Matrix"
+              >
+                <Trophy size={13} className="text-amber-400" />
+                <span>Open Full Mastery Matrix</span>
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Chapters by Module */}
+        {/* Chapters by Module (Collapsible) */}
         <div className="sidebar-modules">
           {MODULES.map(module => {
             const moduleChapters = ALL_CHAPTERS.filter(c => {
@@ -180,55 +225,73 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
             if (moduleChapters.length === 0) return null;
 
+            const isCollapsed = collapsedModules.has(module.id);
+            const readInMod = moduleChapters.filter(c => readChapters.has(c.id)).length;
+            const isAllRead = readInMod === moduleChapters.length;
+
             return (
               <div key={module.id} className="module-group">
-                <div className="module-header">
+                <div
+                  className="module-header clickable"
+                  onClick={() => toggleModule(module.id)}
+                  title={`${isCollapsed ? 'Expand' : 'Collapse'} Track`}
+                  role="button"
+                  tabIndex={0}
+                >
                   <div className="module-icon-box">
                     {getModuleIcon(module.icon)}
                   </div>
                   <div className="module-header-text">
-                    <span className="module-range">{module.numberRange}</span>
+                    <div className="flex items-center gap-1">
+                      <span className="module-range">{module.numberRange}</span>
+                      {isAllRead && <CheckCircle2 size={11} className="text-emerald-400" />}
+                    </div>
                     <h3 className="module-title">{module.title}</h3>
+                  </div>
+                  <div className="module-toggle-caret">
+                    {isCollapsed ? <ChevronRight size={14} /> : <ChevronDown size={14} />}
                   </div>
                 </div>
 
-                <div className="chapter-nav-list">
-                  {moduleChapters.map(chapter => {
-                    const isActive = currentView === 'chapter' && currentChapterId === chapter.id;
-                    const isRead = readChapters.has(chapter.id);
-                    const isProblemASolved = solvedProblems.has(`${chapter.id}-problemA`);
-                    const isProblemBSolved = solvedProblems.has(`${chapter.id}-problemB`);
-                    const bothSolved = isProblemASolved && isProblemBSolved;
+                {!isCollapsed && (
+                  <div className="chapter-nav-list">
+                    {moduleChapters.map(chapter => {
+                      const isActive = currentView === 'chapter' && currentChapterId === chapter.id;
+                      const isRead = readChapters.has(chapter.id);
+                      const isProblemASolved = solvedProblems.has(`${chapter.id}-problemA`);
+                      const isProblemBSolved = solvedProblems.has(`${chapter.id}-problemB`);
+                      const bothSolved = isProblemASolved && isProblemBSolved;
 
-                    return (
-                      <button
-                        key={chapter.id}
-                        className={`chapter-link ${isActive ? 'active' : ''}`}
-                        onClick={() => {
-                          onSelectChapter(chapter.id);
-                          onClose();
-                        }}
-                      >
-                        <span className="chapter-link-num">{chapter.number}</span>
-                        <span className="chapter-link-title">{chapter.title}</span>
-                        <div className="chapter-link-badges">
-                          {bothSolved && (
-                            <span className="badge-mini-solved" title="Both Labs Solved">
-                              <Check size={10} /> Lab
-                            </span>
-                          )}
-                          <span className="chapter-link-status">
-                            {isRead ? (
-                              <CheckCircle2 size={14} className="text-emerald-400" />
-                            ) : (
-                              <Circle size={14} className="text-muted" />
+                      return (
+                        <button
+                          key={chapter.id}
+                          className={`chapter-link ${isActive ? 'active' : ''}`}
+                          onClick={() => {
+                            onSelectChapter(chapter.id);
+                            onClose();
+                          }}
+                        >
+                          <span className="chapter-link-num">{chapter.number}</span>
+                          <span className="chapter-link-title">{chapter.title}</span>
+                          <div className="chapter-link-badges">
+                            {bothSolved && (
+                              <span className="badge-mini-solved" title="Both Labs Solved">
+                                <Check size={10} /> Lab
+                              </span>
                             )}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+                            <span className="chapter-link-status">
+                              {isRead ? (
+                                <CheckCircle2 size={14} className="text-emerald-400" />
+                              ) : (
+                                <Circle size={14} className="text-muted" />
+                              )}
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
               </div>
             );
           })}

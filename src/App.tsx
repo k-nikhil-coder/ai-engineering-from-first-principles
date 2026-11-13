@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import type { TargetRole } from './types/curriculum';
-import { ALL_CHAPTERS, getChapterById } from './data/curriculum';
+import { ALL_CHAPTERS, getChapterById, getAdjacentChapters } from './data/curriculum';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { ChapterView } from './components/ChapterView';
@@ -8,6 +8,7 @@ import { InteractiveTools } from './components/InteractiveTools';
 import { ResourcesView } from './components/ResourcesView';
 import { OverviewView } from './components/OverviewView';
 import { SearchModal } from './components/SearchModal';
+import { ProgressTrackerModal } from './components/ProgressTrackerModal';
 
 export function App() {
   // Theme State
@@ -26,6 +27,7 @@ export function App() {
   const [currentChapterId, setCurrentChapterId] = useState<string>('01-tokens-and-tokenization');
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
+  const [isTrackerOpen, setIsTrackerOpen] = useState<boolean>(false);
 
   // Active Role Filter State
   const [activeRole, setActiveRole] = useState<TargetRole | 'all'>(() => {
@@ -73,6 +75,22 @@ export function App() {
     return new Set<string>();
   });
 
+  // Calculate Overall Mastery Score
+  const totalChapters = ALL_CHAPTERS.length;
+  const readPct = (readChapters.size / totalChapters) * 100;
+  const allLectures = ALL_CHAPTERS.flatMap(c => c.lectures || []);
+  const watchedPct = allLectures.length > 0 ? (allLectures.filter(l => watchedLectures.has(l.url)).length / allLectures.length) * 100 : 0;
+  const totalProblems = totalChapters * 2;
+  const solvedCount = ALL_CHAPTERS.reduce((acc, c) => {
+    let count = 0;
+    if (solvedProblems.has(`${c.id}-problemA`)) count++;
+    if (solvedProblems.has(`${c.id}-problemB`)) count++;
+    return acc + count;
+  }, 0);
+  const solvedPct = (solvedCount / totalProblems) * 100;
+
+  const overallMastery = Math.round((readPct * 0.5) + (watchedPct * 0.2) + (solvedPct * 0.3));
+
   // Sync theme attribute to document
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
@@ -106,6 +124,32 @@ export function App() {
     window.addEventListener('hashchange', handleHash);
     return () => window.removeEventListener('hashchange', handleHash);
   }, []);
+
+  // Global Keyboard Navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing inside input, textarea or search
+      if (['INPUT', 'TEXTAREA'].includes((e.target as HTMLElement)?.tagName) || (e.target as HTMLElement)?.isContentEditable) {
+        return;
+      }
+
+      if (e.key === '[' && currentView === 'chapter') {
+        e.preventDefault();
+        const { prev } = getAdjacentChapters(currentChapterId, activeRole);
+        if (prev) handleSelectChapter(prev.id);
+      } else if (e.key === ']' && currentView === 'chapter') {
+        e.preventDefault();
+        const { next } = getAdjacentChapters(currentChapterId, activeRole);
+        if (next) handleSelectChapter(next.id);
+      } else if ((e.key === 'm' || e.key === 'M') && currentView === 'chapter') {
+        e.preventDefault();
+        handleToggleRead(currentChapterId);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [currentChapterId, currentView, activeRole]);
 
   const handleToggleTheme = () => {
     setTheme(t => (t === 'dark' ? 'light' : 'dark'));
@@ -188,6 +232,19 @@ export function App() {
     });
   };
 
+  const handleResetProgress = () => {
+    setReadChapters(new Set());
+    setWatchedLectures(new Set());
+    setSolvedProblems(new Set());
+    try {
+      localStorage.removeItem('ai-fp-read-chapters');
+      localStorage.removeItem('ai-fp-watched-lectures');
+      localStorage.removeItem('ai-fp-solved-problems');
+    } catch {
+      // ignore
+    }
+  };
+
   const activeChapter = getChapterById(currentChapterId) || ALL_CHAPTERS[0];
 
   return (
@@ -198,6 +255,8 @@ export function App() {
         theme={theme}
         onToggleTheme={handleToggleTheme}
         onGoHome={() => handleSelectView('overview')}
+        onOpenTracker={() => setIsTrackerOpen(true)}
+        overallMastery={overallMastery}
       />
 
       <div className="app-main-container">
@@ -211,6 +270,7 @@ export function App() {
           solvedProblems={solvedProblems}
           activeRole={activeRole}
           onSelectRole={handleSelectRole}
+          onOpenTracker={() => setIsTrackerOpen(true)}
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
         />
@@ -257,6 +317,16 @@ export function App() {
         isOpen={isSearchOpen}
         onClose={() => setIsSearchOpen(false)}
         onSelectChapter={handleSelectChapter}
+      />
+
+      <ProgressTrackerModal
+        isOpen={isTrackerOpen}
+        onClose={() => setIsTrackerOpen(false)}
+        readChapters={readChapters}
+        watchedLectures={watchedLectures}
+        solvedProblems={solvedProblems}
+        onSelectChapter={handleSelectChapter}
+        onResetProgress={handleResetProgress}
       />
     </div>
   );
