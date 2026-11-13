@@ -36,7 +36,7 @@ export const Header: React.FC<HeaderProps> = ({
       <div className="header-center">
         <button className="search-trigger-btn" onClick={onOpenSearch}>
           <Search size={16} className="text-muted" />
-          <span className="search-placeholder">Quick search 28 chapters...</span>
+          <span className="search-placeholder">Quick search 36 chapters & labs...</span>
           <kbd className="search-kbd">Ctrl K</kbd>
         </button>
       </div>

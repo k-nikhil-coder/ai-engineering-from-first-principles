@@ -2,376 +2,333 @@ import type { Chapter } from '../../types/curriculum';
 
 export const MODULE_6_CHAPTERS: Chapter[] = [
   {
-    id: "26-system-design-support-workflow-engine",
-    number: "26",
-    title: "System Design: Autonomous Customer Support & Workflow Engine",
-    moduleId: "system-design",
-    moduleName: "End-to-End System Design",
-    readTime: "25 min",
-    motto: "A toy chatbot answers questions; an enterprise support engine reads user state, verifies identity, dispatches CRM updates, and knows when to yield to a human.",
-    problemStatement: "Designing a customer support automation capable of handling 500,000 monthly tickets across billing, technical issues, and cancellations. The system must meet <1 second response SLAs, maintain 99.9% uptime, prevent unauthorized account changes, and escalate gracefully to human support agents when confidence is low.",
+    id: "30-repository-context-claudemd-ast",
+    number: "30",
+    title: "Repository Context, CLAUDE.md & AST Indexing",
+    moduleId: "harness",
+    moduleName: "Agentic Coding & Harness Engineering",
+    trackNumber: 6,
+    readTime: "24 min",
+    targetRoles: ['harness-engineer', 'agent-architect', 'ai-engineer'],
+    motto: "A coding agent is only as good as its harness. Raw model intelligence without repository ground truth produces synthetic hallucinations.",
+    problemStatement: "When dropped into a 500,000-line enterprise monorepo, coding agents (like Claude Code, Cursor, Devin, or custom harnesses) will either blow up their context window reading unrelated files or hallucinate non-existent internal utility functions. Mastering repository context architecture—via hierarchical `CLAUDE.md` rules, Tree-sitter Abstract Syntax Tree (AST) repo maps, Git worktree isolation, and context compaction—is the foundation of harness engineering.",
     coreConcepts: [
       {
-        title: "High-Level Architecture & Request Flow",
-        summary: "The multi-stage pipeline connecting front-end webhooks to backend business machinery.",
+        title: "Hierarchical Agent Rules: The CLAUDE.md / AGENTS.md Architecture",
+        summary: "Grounding autonomous models with project-specific invariants, build commands, and negative constraints.",
         content: [
-          "Stage 1: Ingestion & Auth Gate. Webhook validates cryptographic signature, extracts user ID, and pulls customer subscription tier from PostgreSQL.",
-          "Stage 2: Semantic Intent Classifier & Fast Route. Fast 8B model classifies intent (e.g. Billing vs Bug vs Cancellation) and determines required permissions.",
-          "Stage 3: Hybrid Retrieval. If intent requires documentation, queries Qdrant with BM25 + dense hybrid search; re-ranks top 3 chunks.",
-          "Stage 4: Guarded Tool Execution. If intent requires action (e.g. `issue_refund`), executes with parameter validation and checks idempotency key.",
-          "Stage 5: Human-in-the-Loop Escalation. If sentiment is hostile, refund value > $100, or LLM confidence < 0.85, routes ticket to Zendesk human agent queue with summarized context."
+          "Root Rulebook (`CLAUDE.md` / `AGENTS.md`): Located at repo root. Declares package manager commands (`pnpm test`, `cargo build`), code style rules, test runner conventions, and banned operations (e.g. 'Never edit `schema.prisma` directly').",
+          "Subdirectory Overrides: Scoped rulebooks inside nested directories (e.g. `packages/billing/CLAUDE.md`) that activate only when the agent edits files in that subtree.",
+          "Deterministic Anchoring: Rules must be written as concise imperative commandments, not conversational suggestions."
         ],
-        diagram: `User Message (Webhook)
-         │
-         ▼
-[1. Ingestion & Auth Gate] ──► Query Redis Session & Postgres Customer Profile
-         │
-         ▼
-[2. Intent Classifier & Router (8B SLM)]
-    ├─── FAQ / General ──► [3. Hybrid RAG (Qdrant + Cohere)] ──► Frontier LLM Answer
-    ├─── Account Action ──► [4. Guarded Tool Dispatcher] ──► Stripe / CRM Update
-    └─── High Risk / Anger ──► [5. Human Escalation Queue] ──► Zendesk Staff`
+        diagram: `Repository Root
+  ├── CLAUDE.md (Root invariants: lint commands, test rules, banned edits)
+  ├── src/
+  │   ├── core/
+  │   └── billing/
+  │       ├── CLAUDE.md (Subtree rules: Stripe idempotency requirements)
+  │       └── service.ts
+  └── .git/worktrees/ (Isolated branch copies for parallel sub-agents)`
       },
       {
-        title: "Latency & Cost Economics at Scale",
-        summary: "Financial and architectural feasibility for 500,000 requests/month.",
+        title: "Tree-sitter AST Repo Maps & Symbol Graphs",
+        summary: "Providing the model with structural codebase orientation without loading raw file contents.",
         content: [
-          "Without Tiering: 500k requests directly to GPT-4o @ 2,000 tokens avg = \$15,000/month, avg latency 2.5s.",
-          "With Tiering (Semantic Cache + 8B Classifier + RAG): 30% cache hits (0ms, \$0), 50% handled by 8B model (\$120), 20% escalated to frontier model (\$3,000). Total cost: \$3,120/month (79% savings), avg latency 650ms."
+          "AST Parsing (Tree-sitter): Parses code into syntax trees to extract top-level class names, function signatures, exported types, and docstrings.",
+          "PageRank on Symbol Graphs: Constructs a dependency graph of which symbols call which functions. Ranks the most important central symbols in the repo to include in the agent's system prompt.",
+          "Git Worktree Isolation: Rather than allowing agents to execute git checkout on the user's active working copy, the harness creates independent git worktrees in `.git/worktrees/agent-branch`, allowing concurrent sub-agents to compile and run tests in parallel without file collisions."
         ]
       }
     ],
     codeImplementation: {
       language: "python",
-      title: "End-to-End Support Triage & Action Engine",
-      description: "A complete runnable orchestration module coordinating triage, safe tool calling, and human escalation.",
-      code: `import json
+      title: "Pure Python Tree-sitter Style Symbol Extractor & Repo Map Generator",
+      description: "Extracting function signatures, classes, and method outlines to construct a lightweight repository map for agent context.",
+      code: `import ast
 
-class EnterpriseSupportEngine:
-    def __init__(self):
-        self.refund_limit_auto = 100.0  # Max auto refund without human approval
+def generate_repo_map(python_code: str, filename: str) -> str:
+    """
+    Parses Python code into an AST and generates a concise symbol outline.
+    """
+    try:
+        tree = ast.parse(python_code)
+    except SyntaxError:
+        return f"{filename}: [Syntax Error - Could not parse]"
 
-    def process_ticket(self, user_id, user_email, message, account_balance):
-        print(f"=== Incoming Ticket from {user_email} (Balance: \${account_balance}) ===")
-        print(f"Message: '{message}'")
+    outline = [f"# File: {filename}"]
+    for node in tree.body:
+        if isinstance(node, ast.ClassDef):
+            outline.append(f"class {node.name}:")
+            for item in node.body:
+                if isinstance(item, ast.FunctionDef):
+                    args = [a.arg for a in item.args.args]
+                    outline.append(f"    def {item.name}({', '.join(args)}): ...")
+        elif isinstance(node, ast.FunctionDef):
+            args = [a.arg for a in node.args.args]
+            outline.append(f"def {node.name}({', '.join(args)}): ...")
 
-        # 1. Fast Intent Classification & Sentiment Analysis
-        is_angry = "unacceptable" in message.lower() or "terrible" in message.lower()
-        is_refund_request = "refund" in message.lower() or "charge" in message.lower()
+    return "\\n".join(outline)
 
-        if is_angry:
-            return self.escalate_to_human(user_id, message, reason="High user frustration detected.")
+sample_code = """
+class StripePaymentGateway:
+    def __init__(self, api_key: str):
+        self.api_key = api_key
+    def charge_customer(self, customer_id: str, amount: int) -> bool:
+        # 50 lines of complex transaction logic
+        pass
 
-        if is_refund_request:
-            # Extract refund amount (simulated extraction)
-            refund_amount = 45.0 # Extracted from context
-            
-            if refund_amount > self.refund_limit_auto:
-                return self.escalate_to_human(
-                    user_id, message,
-                    reason=f"Refund request of \${refund_amount} exceeds auto-approval ceiling of \${self.refund_limit_auto}."
-                )
-            
-            # Safe automated tool dispatch
-            action_result = self.execute_refund(user_id, refund_amount)
-            return {
-                "status": "RESOLVED_AUTOMATED",
-                "response": f"Your refund of \${refund_amount:.2f} has been processed successfully. Confirmation ID: {action_result['tx_id']}."
-            }
+def calculate_vat(subtotal: float, country: str) -> float:
+    return subtotal * 0.20
+"""
 
-        return {
-            "status": "RESOLVED_AUTOMATED",
-            "response": "Thank you for reaching out. Here is how you can update your settings..."
-        }
-
-    def execute_refund(self, user_id, amount):
-        print(f"[TOOL EXECUTION] Dispatching Stripe refund for user {user_id}: \${amount}")
-        return {"status": "success", "tx_id": "re_3K9d8xL29A"}
-
-    def escalate_to_human(self, user_id, message, reason):
-        print(f"[ESCALATION TRIGGERED] Reason: {reason}")
-        return {
-            "status": "ESCALATED_TO_HUMAN",
-            "zendesk_ticket_priority": "URGENT",
-            "summary_for_agent": f"Customer {user_id} requested support. Reason for escalation: {reason}"
-        }
-
-engine = EnterpriseSupportEngine()
-
-# Test Automated Resolution
-res1 = engine.process_ticket(101, "alice@example.com", "Can you please refund the $45 accidental charge?", 150.0)
-print("Result 1:", json.dumps(res1, indent=2))
-
-# Test Human Escalation
-print("\n")
-res2 = engine.process_ticket(102, "bob@example.com", "This terrible service charged me $500! Unacceptable!", 500.0)
-print("Result 2:", json.dumps(res2, indent=2))`
+print(generate_repo_map(sample_code, "src/billing/gateway.py"))`
     },
     productionPitfalls: [
-      "Letting the LLM authorize financial transactions without strict programmatic ceiling checks.",
-      "Failing to pass conversation history and structured summaries to human agents upon escalation.",
-      "Not caching repeated questions during product outage spikes, overwhelming backend services."
+      "Dumping full repository file trees into context; a 10,000-file listing consumes 80,000 tokens before the agent even reads a line of code.",
+      "Writing verbose 2,000-word `CLAUDE.md` files; instructions must be punchy and strictly under 500 words to prevent attention decay.",
+      "Allowing multiple parallel agents to edit the same shared directory simultaneously without git worktree isolation."
     ],
     keyTakeaways: [
-      "Enterprise support engines combine semantic triage, deterministic policy enforcement, and seamless human escalation.",
-      "Never allow an LLM to override hard business limits; enforce constraints in software, not prompts.",
-      "Track escalation rate as a core engineering KPI."
+      "Hierarchical `CLAUDE.md` files provide authoritative repository guidelines and build instructions.",
+      "AST symbol maps orient the agent across large repositories using less than 2% of the token budget of raw files.",
+      "Use Git worktrees (`git worktree add`) to isolate parallel coding agents."
     ],
     quiz: [
       {
-        question: "Why should monetary refund limits be enforced via deterministic backend code rather than system prompt instructions?",
+        question: "Why are Tree-sitter AST repo maps used in agentic coding harnesses instead of passing raw code files?",
         options: [
-          "Prompt instructions can be bypassed via prompt injection or unexpected phrasing, whereas code logic provides guaranteed enforcement",
-          "Python runs faster than English",
-          "LLMs cannot parse numbers with decimal points",
-          "Stripe APIs do not allow LLM connections"
+          "They extract high-level function and class signatures, giving the agent global codebase orientation while consuming 98% fewer tokens",
+          "Tree-sitter encrypts code for privacy",
+          "LLMs cannot read raw source code",
+          "It compiles Python into C++"
         ],
         correctIndex: 0,
-        explanation: "System prompts are probabilistic suggestions, not guarantees. A clever adversarial user could trick the model into issuing unauthorized refunds. Hard limits must be coded as programmatic preconditions in software."
-      }
-    ]
-  },
-  {
-    id: "27-system-design-enterprise-rag",
-    number: "27",
-    title: "System Design: Enterprise RAG Knowledge Engine",
-    moduleId: "system-design",
-    moduleName: "End-to-End System Design",
-    readTime: "26 min",
-    motto: "Enterprise RAG is 80% data engineering, 15% retrieval science, and 5% prompt generation.",
-    problemStatement: "Building a multi-tenant enterprise search and question-answering platform indexing 5 million internal documents (PDFs, Confluence pages, Slack threads, and Google Drive docs). The system must enforce strict role-based access control (RBAC), prevent data leaks across organizations, guarantee exact citation grounding, and achieve sub-800ms query latency.",
-    coreConcepts: [
-      {
-        title: "The Ingestion & Normalization Pipeline",
-        summary: "Transforming unstructured enterprise chaos into clean, searchable vector representations.",
-        content: [
-          "Document Parsers: Specialized extractors for PDFs (layout-aware, OCR for scanned images), Markdown, and HTML tables.",
-          "Metadata Tagging: Every chunk is stamped with `tenant_id`, `document_id`, `created_at`, `acl_groups` (user permissions), and `source_url`.",
-          "Embedding Generation: Batch embedded using state-of-the-art dense models with asynchronous queue workers (Celery / Kafka)."
-        ]
-      },
-      {
-        title: "Multi-Tenant Security & Single-Stage Filtering",
-        summary: "Guaranteeing that Tenant A never sees Tenant B's documents.",
-        content: [
-          "Single-Stage Vector Filtering: Vector database filters candidates on `tenant_id == req.tenant_id AND acl_group IN req.user_groups` directly during HNSW graph traversal.",
-          "Citation Grounding: Model is forced via structured output to output `[{claim: str, source_chunk_id: str, exact_quote: str}]`. A post-generation verification step confirms that `exact_quote` actually exists verbatim in the referenced chunk."
-        ]
+        explanation: "AST repo maps provide a compact structural summary of available classes, methods, and types across the entire repository, fitting in a few hundred tokens rather than hundreds of thousands."
       }
     ],
-    codeImplementation: {
-      language: "python",
-      title: "Enterprise Multi-Tenant RAG Verifier & Citation Grounder",
-      description: "Simulating role-based access filtering and automated quotation verification in Python.",
-      code: `class EnterpriseRAGSearch:
-    def __init__(self):
-        # Simulated vector database documents with tenant IDs and ACLs
-        self.doc_store = [
-            {
-                "id": "doc_eng_01",
-                "tenant_id": "corp_acme",
-                "acl": ["engineering", "all_employees"],
-                "text": "The deployment key is rotated every 90 days via HashiCorp Vault.",
-                "url": "https://wiki.acme.corp/sec/keys"
-            },
-            {
-                "id": "doc_hr_02",
-                "tenant_id": "corp_acme",
-                "acl": ["hr_executives"],
-                "text": "Executive compensation bonuses are calculated using metric Q4-EBITDA.",
-                "url": "https://wiki.acme.corp/hr/comp"
-            }
-        ]
+    simulatorType: 'react-loop',
+    labs: {
+      problemA: {
+        title: "Algorithmic Lab: Git Worktree Parallel Workspace Allocator",
+        subtitle: "Core DSA: Resource Pool Allocation & Path Isolation",
+        problemStatement: "Implement `WorktreeManager.acquire_workspace(task_id: str) -> str` and `release_workspace(task_id: str)` which allocates isolated branch worktrees under `.worktrees/task_{id}`, prevents concurrent write collisions, and cleans up detached heads.",
+        starterCode: `class WorktreeManager:
+    def __init__(self, repo_root: str):
+        pass`,
+        solutionCode: `import os, shutil
 
-    def query(self, tenant_id, user_groups, search_terms):
-        print(f"Executing search for Tenant: '{tenant_id}' | Groups: {user_groups}")
-        allowed_results = []
+class WorktreeManager:
+    def __init__(self, repo_root: str):
+        self.root = repo_root
+        self.active = {} # task_id -> path
         
-        for doc in self.doc_store:
-            # 1. Multi-Tenant isolation check
-            if doc["tenant_id"] != tenant_id:
-                continue
-                
-            # 2. RBAC Access Control check
-            has_permission = any(g in doc["acl"] for g in user_groups)
-            if not has_permission:
-                continue
-                
-            # 3. Text relevance matching
-            if any(term in doc["text"].lower() for term in search_terms):
-                allowed_results.append(doc)
-                
-        return allowed_results
-
-    def verify_grounded_citation(self, claim, cited_quote, original_doc_text):
-        """Validates that cited quote exists verbatim in source document."""
-        if cited_quote in original_doc_text:
-            return True, "Citation verified verbatim."
-        return False, "HALLUCINATION DETECTED: Cited quote not found in source text!"
-
-rag = EnterpriseRAGSearch()
-
-# Test 1: Standard engineer searching for compensation (Should be blocked by RBAC!)
-results_eng = rag.query(tenant_id="corp_acme", user_groups=["engineering"], search_terms=["compensation", "bonuses"])
-print(f"Engineer query returned {len(results_eng)} docs (RBAC successfully blocked unauthorized doc)")
-
-# Test 2: Grounding verification check
-doc_text = "The deployment key is rotated every 90 days via HashiCorp Vault."
-claim = "Keys are rotated quarterly."
-valid_quote = "rotated every 90 days"
-fake_quote = "rotated every 30 days"
-
-print("\nVerifying Valid Quote:", rag.verify_grounded_citation(claim, valid_quote, doc_text)[1])
-print("Verifying Fake Quote:", rag.verify_grounded_citation(claim, fake_quote, doc_text)[1])`
-    },
-    productionPitfalls: [
-      "Performing post-filtering: Querying top 100 vectors across the whole database and then filtering by tenant in Python, causing zero results if other tenants dominate the space.",
-      "Ignoring table data: Naive text splitting destroys markdown and HTML tables; use table-specific chunking and summarization.",
-      "Not monitoring embedding drift when updating document collections."
-    ],
-    keyTakeaways: [
-      "Always filter by tenant and ACL groups inside the vector search index (Single-Stage Filtering).",
-      "Mandate structured citations and verify that quoted snippets exist verbatim in source documents.",
-      "Invest heavily in layout-aware document parsing for PDFs and tables."
-    ],
-    quiz: [
-      {
-        question: "Why is 'Single-Stage Filtering' (pre-filtering inside the vector graph) necessary for secure multi-tenant RAG systems?",
-        options: [
-          "Post-filtering after retrieving top-k global results can result in empty result sets if another tenant's documents occupy all the top slots, and leaks vector distances",
-          "Single-stage filtering makes vectors smaller",
-          "It is required by Python 3",
-          "Post-filtering is illegal under GDPR"
-        ],
-        correctIndex: 0,
-        explanation: "If you retrieve the top 20 nearest neighbors globally and then filter out documents the user cannot access, all 20 might belong to other tenants—leaving 0 valid results even though relevant accessible documents exist in the database."
+    def acquire_workspace(self, task_id: str) -> str:
+        if task_id in self.active:
+            return self.active[task_id]
+        path = os.path.join(self.root, ".worktrees", f"agent_{task_id}")
+        os.makedirs(path, exist_ok=True)
+        # In production: subprocess.run(["git", "worktree", "add", "-b", f"task-{task_id}", path, "HEAD"])
+        self.active[task_id] = path
+        return path
+        
+    def release_workspace(self, task_id: str):
+        path = self.active.pop(task_id, None)
+        if path and os.path.exists(path):
+            # In production: subprocess.run(["git", "worktree", "remove", "--force", path])
+            shutil.rmtree(path, ignore_errors=True)`,
+        testCases: [
+          {
+            input: 'Concurrent tasks task_1 and task_2 acquire workspaces',
+            expectedOutput: 'Distinct isolated filesystem paths returned (.worktrees/agent_task_1 and _2)',
+            explanation: "Guarantees parallel sub-agents never overwrite each other's in-progress file edits."
+          }
+        ]
+      },
+      problemB: {
+        title: "Production Systems Debugging: The Agent /clear vs /compact Context Trap",
+        subtitle: "Production Systems Bug: Agent losing critical repo map context after running /clear",
+        problemStatement: "A user observed that after running `/clear` to recover from a context overflow, the agent started hallucinating file paths and forgot the project build commands. Redesign the reset lifecycle so that `/clear` purges conversation history but automatically re-injects the root `CLAUDE.md` and Tree-sitter repo map.",
+        starterCode: `# Flaky reset:
+# def on_clear(): conversation_history.clear() # Completely wipes rules!`,
+        solutionCode: `# Production Fix: Context Lifecycle Reset Architecture
+class AgentSessionContext:
+    def __init__(self, repo_path: str):
+        self.repo_path = repo_path
+        self.pinned_system_context = self.load_invariants()
+        self.turns = []
+        
+    def load_invariants(self) -> str:
+        # Always read root CLAUDE.md and fresh AST summary
+        rules = open(f"{self.repo_path}/CLAUDE.md").read() if os.path.exists(f"{self.repo_path}/CLAUDE.md") else ""
+        return f"[SYSTEM RULES]\\n{rules}"
+        
+    def reset_clear(self):
+        # Purge conversational turns, but PRESERVE pinned system invariants:
+        self.turns = [{"role": "system", "content": self.pinned_system_context}]`,
+        testCases: [
+          {
+            input: 'reset_clear() invoked',
+            expectedOutput: 'Chat history purged to 0 turns; CLAUDE.md system invariants retained at turn 0',
+            explanation: "Guarantees the agent never operates in an unanchored zero-rules state."
+          }
+        ]
       }
-    ]
+    }
   },
   {
-    id: "28-system-design-autonomous-coding-agent",
-    number: "28",
-    title: "System Design: Autonomous Coding & Engineering Agent",
-    moduleId: "system-design",
-    moduleName: "End-to-End System Design",
-    readTime: "28 min",
-    motto: "The ultimate applied AI engineering test: building an agent that can read, reason over, edit, and verify code inside an isolated sandbox.",
-    problemStatement: "Architecting a production software engineering agent (similar to Devin, Cursor Agent, or Antigravity) that takes high-level user issues ('Fix bug in authentication token expiry'), navigates a 200,000-line codebase, generates unified diffs, runs test suites inside a sandbox, and verifies the solution before human review.",
+    id: "31-lifecycle-hooks-custom-skills-headless-cicd",
+    number: "31",
+    title: "Lifecycle Hooks, Custom Skills & Headless CI/CD",
+    moduleId: "harness",
+    moduleName: "Agentic Coding & Harness Engineering",
+    trackNumber: 6,
+    readTime: "25 min",
+    targetRoles: ['harness-engineer', 'agent-architect', 'ai-engineer'],
+    motto: "The difference between an interactive chatbot and an autonomous software engine is headless execution and deterministic lifecycle hooks.",
+    problemStatement: "Interactive coding agents (like Claude Code or Cursor) are powerful for human-in-the-loop pair programming. But running agents autonomously in CI/CD pipelines (e.g. automated PR reviews, automated dependency upgrades, self-healing production alerts) requires non-interactive CLI execution (`claude -p`), deterministic lifecycle hooks (`PreToolUse`, `PostToolUse`), and custom skill definitions.",
     coreConcepts: [
       {
-        title: "The Four Pillars of a Production Coding Agent",
-        summary: "How modern autonomous programming agents operate under the hood.",
+        title: "Deterministic Agent Lifecycle Hooks",
+        summary: "Injecting hard programmatic policies before and after model tool executions.",
         content: [
-          "1. Codebase Context Engine: Ripgrep for fast symbol search, Tree-sitter for AST parsing, and file outline summaries to avoid loading entire repositories into context.",
-          "2. Tool Belt: Granular tools for `read_file(path, line_range)`, `edit_file(path, target, replacement)`, `list_dir(path)`, and `run_command(cmd, timeout)`.",
-          "3. Isolated Sandbox: All bash commands execute inside an ephemeral, network-isolated container with resource limits (cgroups for memory and CPU).",
-          "4. Test-Driven Verification Loop: The agent runs tests before and after making edits. If tests fail, the compiler/test error output is fed back into the next turn for self-healing."
+          "PreToolUse Hook: Runs before the model executes a tool. Can inspect tool arguments, block dangerous actions (e.g. `rm -rf`), or modify arguments (e.g. enforcing dry-run flags).",
+          "PostToolUse Hook: Runs after a tool executes. Inspects stdout, checks for formatting errors, runs automated linters (e.g. `ruff` or `eslint`), and feeds compiler errors back to the model as observations.",
+          "Stop Hook: Runs when the model attempts to finish a task. Verifies that test suites pass before allowing the agent to exit with code 0."
         ],
-        diagram: `User Task: "Fix race condition in UserCache"
+        diagram: `Model emits Tool Call: edit_file("src/api.ts", diff)
   │
   ▼
-[Agent Loop] ◄────────────────────────────────────────┐
-  │                                                   │
-  ├──► Tool: ripgrep("UserCache")                     │
-  ├──► Tool: read_file("src/cache.py", L40-L90)       │
-  ├──► Tool: edit_file("src/cache.py", diff)          │
-  ├──► Tool: run_command("pytest tests/test_cache.py")│
-  │          │                                        │
-  │          ├── Failure? ────────────────────────────┘ (Self-healing iteration)
-  │          └── Success?
+[PreToolUse Hook] ──► Blocked if protected branch or forbidden path!
+  │ Approved
   ▼
-[Emit Git Diff & Ready for Review]`
+Host Runtime executes file edit
+  │ Output / Diff
+  ▼
+[PostToolUse Hook] ──► Automatically runs: eslint src/api.ts
+  │ If linter fails: Inject error string into model observation for self-healing!
+  ▼
+Model observes lint results & fixes syntax immediately`
       },
       {
-        title: "Diff Strategies: Unified Diff vs Search-and-Replace",
-        summary: "Why rewrite-the-whole-file approaches fail on large codebases.",
+        title: "Reusable Skills & Headless CI/CD Execution",
+        summary: "Packaging domain knowledge into reusable markdown skill files and non-interactive scripts.",
         content: [
-          "Full File Rewrite: Asking an LLM to output a 1,000-line file to change 3 lines is slow, expensive, and frequently truncates code with '// ... rest of code unchanged'.",
-          "Search-and-Replace Blocks: The agent outputs the exact target string to replace and the new replacement string. High precision, minimal tokens.",
-          "Unified Diffs (patch): Standard patch format with line context."
+          "Custom Skills (`SKILL.md`): Markdown documentation with YAML frontmatter defining instructions, schemas, and script references that the agent loads dynamically when relevant.",
+          "Headless Non-Interactive CLI (`claude -p 'Fix issue #402' --output-format json`): Runs agent workflows in GitHub Actions, GitLab CI, or Kubernetes CronJobs with zero human intervention.",
+          "Automated Pull Request Engineering: Agent checks out branch, inspects issue, writes code, executes tests, and opens a GitHub PR with generated changelogs."
         ]
       }
     ],
     codeImplementation: {
       language: "python",
-      title: "Mental Model: Autonomous Code Edit & Test Self-Correction Loop",
-      description: "An agent that applies edits to code, runs simulated unit tests, and self-corrects upon compilation failure.",
-      code: `class CodingAgentLoop:
+      title: "Production Agent Lifecycle Hook Pipeline in Pure Python",
+      description: "A deterministic middleware pipeline executing PreToolUse, PostToolUse, and Stop verification gates.",
+      code: `class AgentHookPipeline:
     def __init__(self):
-        self.code_files = {
-            "math_utils.py": "def divide(a, b):\\n    return a / b\\n"
-        }
+        self.pre_hooks = []
+        self.post_hooks = []
+        
+    def add_pre_tool_hook(self, fn):
+        self.pre_hooks.append(fn)
+        
+    def add_post_tool_hook(self, fn):
+        self.post_hooks.append(fn)
 
-    def run_tests(self):
-        """Simulates running pytest."""
-        code = self.code_files["math_utils.py"]
-        # Test case: divide(10, 0) should return None without crashing
-        namespace = {}
-        try:
-            exec(code, namespace)
-            divide_fn = namespace["divide"]
-            # Run test 1: standard
-            assert divide_fn(10, 2) == 5
-            # Run test 2: zero check
-            res = divide_fn(10, 0)
-            if res is not None:
-                return False, f"Test Failed: divide(10, 0) returned {res}, expected None"
-            return True, "All tests passed!"
-        except ZeroDivisionError as e:
-            return False, f"ZeroDivisionError: division by zero"
-        except Exception as e:
-            return False, f"Error: {str(e)}"
-
-    def apply_edit(self, filename, new_code):
-        print(f"[EDIT] Updating {filename}...")
-        self.code_files[filename] = new_code
-
-    def solve_bug(self):
-        print("Initial Test Run:")
-        passed, log = self.run_tests()
-        print(f"Status: Passed={passed} | Log: {log}\n")
-
-        # Iteration 1: Agent observes failure and attempts fix
-        if not passed:
-            print("--- Agent Iteration 1 ---")
-            print("Agent Observation: Tests failed with ZeroDivisionError.")
-            print("Agent Thought: I need to add a check for b == 0 and return None.")
+    def execute_tool_safely(self, tool_name, args, tool_fn):
+        # 1. Run PreToolUse Hooks (Can abort or modify)
+        for hook in self.pre_hooks:
+            allowed, reason = hook(tool_name, args)
+            if not allowed:
+                return {"status": "BLOCKED", "error": f"PreToolUse Hook Rejection: {reason}"}
+                
+        # 2. Execute underlying function
+        result = tool_fn(**args)
+        
+        # 3. Run PostToolUse Hooks (Can append lint feedback or verify)
+        for hook in self.post_hooks:
+            result = hook(tool_name, args, result)
             
-            fixed_code = "def divide(a, b):\\n    if b == 0:\\n        return None\\n    return a / b\\n"
-            self.apply_edit("math_utils.py", fixed_code)
+        return {"status": "SUCCESS", "output": result}
 
-            # Verification run
-            print("\nVerification Test Run:")
-            passed_after, log_after = self.run_tests()
-            print(f"Status: Passed={passed_after} | Log: {log_after}")
-            if passed_after:
-                print("\n[SUCCESS] Coding agent successfully fixed bug and verified tests!")
+pipeline = AgentHookPipeline()
+# Guard 1: Block writing to .env files
+pipeline.add_pre_tool_hook(lambda name, args: (False, "Writing to .env forbidden") if ".env" in str(args) else (True, "OK"))
+# Guard 2: Post linter
+pipeline.add_post_tool_hook(lambda name, args, res: f"{res} [LINT CHECK: PASSED]")
 
-agent = CodingAgentLoop()
-agent.solve_bug()`
+print(pipeline.execute_tool_safely("edit", {"path": ".env"}, lambda path: "edited"))
+print(pipeline.execute_tool_safely("edit", {"path": "src/main.py"}, lambda path: "file updated"))`
     },
     productionPitfalls: [
-      "Running agent shell commands directly on the host machine without container isolation.",
-      "Passing entire 5,000-line files to the model instead of localized line-range reads.",
-      "Allowing agents to delete git histories or push to protected branches without human sign-off."
+      "Running headless agents in CI with write access to production database credentials.",
+      "Allowing headless agents to auto-merge pull requests without automated test suites and human code review approval.",
+      "Failing to set hard cost and timeout limits in CI workflows, resulting in $500 GitHub Action runner bills."
     ],
     keyTakeaways: [
-      "Coding agents require AST parsing and fast text search (ripgrep) to navigate repositories efficiently.",
-      "Use targeted Search-and-Replace editing rather than full file rewrites.",
-      "The self-correction test loop (Edit -> Test -> Observe Errors -> Refine) is the core engine of autonomous programming."
+      "Lifecycle hooks (`PreToolUse`, `PostToolUse`) enforce deterministic software guardrails around stochastic models.",
+      "Headless CLI execution enables embedding agentic coding into standard DevOps and CI/CD pipelines.",
+      "Package reusable workflows into `SKILL.md` files for instant cross-project skill transfer."
     ],
     quiz: [
       {
-        question: "Why is Search-and-Replace block editing preferred over Full File Rewriting for AI coding agents?",
+        question: "What is the primary function of a `PostToolUse` lifecycle hook in an agentic coding harness?",
         options: [
-          "It uses a tiny fraction of tokens, avoids 30-second generation latencies, and prevents accidental deletions of untouched code",
-          "Full file rewriting is not supported by Python",
-          "Compilers do not accept full files",
-          "It makes git commits impossible"
+          "It inspects tool output, runs deterministic checks (like linters or typecheckers), and injects diagnostic feedback back into the model before the next turn",
+          "It reboots the operating system",
+          "It deletes the git repository",
+          "It converts TypeScript into Java"
         ],
         correctIndex: 0,
-        explanation: "In large files (500+ lines), full file rewrites consume enormous token budgets, risk hitting output limits, and frequently truncate code with comments like '// rest of code here', breaking the build."
+        explanation: "PostToolUse hooks run automatically after tool execution to validate syntax, run linters (like eslint or ruff), and feed any compiler errors directly back to the model for self-healing."
       }
-    ]
+    ],
+    simulatorType: 'react-loop',
+    labs: {
+      problemA: {
+        title: "Algorithmic Lab: Non-Interactive Headless Tool Call Pipeline",
+        subtitle: "Core DSA: Middleware Pipeline Pattern & Exit Code Propagation",
+        problemStatement: "Implement a headless agent runner `run_headless_turn(prompt: str, tool_registry: dict, hooks: list) -> tuple[int, str]` that executes a single turn in CI/CD, returns exit code 0 on successful goal completion, or exit code 1 if any pre-hook blocks execution.",
+        starterCode: `def run_headless_turn(prompt: str, tool_registry: dict, hooks: list) -> tuple[int, str]:
+    # TODO: Implement headless execution
+    pass`,
+        solutionCode: `def run_headless_turn(prompt: str, tool_registry: dict, hooks: list) -> tuple[int, str]:
+    for h in hooks:
+        ok, err = h(prompt)
+        if not ok:
+            return 1, f"CI Pipeline Blocked: {err}"
+    return 0, "CI Agent Task Completed Successfully."`,
+        testCases: [
+          {
+            input: 'Hook checks banned files; prompt touches safe files',
+            expectedOutput: '(0, "CI Agent Task Completed Successfully.")',
+            explanation: "Clean exit code 0 enables GitHub Actions to proceed."
+          }
+        ]
+      },
+      problemB: {
+        title: "Production Systems Debugging: The Infinite CI Auto-Fix PR Loop",
+        subtitle: "Production Systems Bug: Headless agent re-triggering its own GitHub Actions workflow",
+        problemStatement: "A headless PR review agent pushed code fixes back to a PR. The git push triggered the GitHub Actions CI pipeline, which spawned the agent again, creating an infinite loop of 40 automated commits in 10 minutes. Fix the workflow with `[skip ci]` commit messages and actor bot filtering.",
+        starterCode: `# Buggy git push in CI:
+# git commit -m "Auto-fix lint errors"
+# git push origin head`,
+        solutionCode: `# Fix: Add [skip ci] and actor check in GitHub Actions workflow:
+# name: Agent PR Auto-Fix
+# on:
+#   pull_request:
+# jobs:
+#   auto-fix:
+#     if: github.actor != 'github-actions[bot]' && github.actor != 'agent-bot'
+#     steps:
+#       - run: git commit -m "Auto-fix lint errors [skip ci]"`,
+        testCases: [
+          {
+            input: 'Bot commits with [skip ci] and actor filtering enabled',
+            expectedOutput: 'Workflow executes once and halts; zero recursive workflow cascades.',
+            explanation: "Prevents headless agent workflows from re-triggering themselves indefinitely."
+          }
+        ]
+      }
+    }
   }
 ];

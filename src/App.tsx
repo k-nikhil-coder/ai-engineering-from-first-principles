@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import type { TargetRole } from './types/curriculum';
 import { ALL_CHAPTERS, getChapterById } from './data/curriculum';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
@@ -26,10 +27,45 @@ export function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
   const [isSearchOpen, setIsSearchOpen] = useState<boolean>(false);
 
+  // Active Role Filter State
+  const [activeRole, setActiveRole] = useState<TargetRole | 'all'>(() => {
+    try {
+      const saved = localStorage.getItem('ai-fp-active-role');
+      if (saved && ['all', 'ai-engineer', 'agent-architect', 'harness-engineer', 'fde'].includes(saved)) {
+        return saved as TargetRole | 'all';
+      }
+    } catch {
+      // ignore
+    }
+    return 'all';
+  });
+
   // Read Progress State
   const [readChapters, setReadChapters] = useState<Set<string>>(() => {
     try {
       const saved = localStorage.getItem('ai-fp-read-chapters');
+      if (saved) return new Set(JSON.parse(saved));
+    } catch {
+      // ignore
+    }
+    return new Set<string>();
+  });
+
+  // Watched Lectures State
+  const [watchedLectures, setWatchedLectures] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem('ai-fp-watched-lectures');
+      if (saved) return new Set(JSON.parse(saved));
+    } catch {
+      // ignore
+    }
+    return new Set<string>();
+  });
+
+  // Solved Problems State
+  const [solvedProblems, setSolvedProblems] = useState<Set<string>>(() => {
+    try {
+      const saved = localStorage.getItem('ai-fp-solved-problems');
       if (saved) return new Set(JSON.parse(saved));
     } catch {
       // ignore
@@ -75,6 +111,15 @@ export function App() {
     setTheme(t => (t === 'dark' ? 'light' : 'dark'));
   };
 
+  const handleSelectRole = (role: TargetRole | 'all') => {
+    setActiveRole(role);
+    try {
+      localStorage.setItem('ai-fp-active-role', role);
+    } catch {
+      // ignore
+    }
+  };
+
   const handleSelectChapter = (id: string) => {
     setCurrentChapterId(id);
     setCurrentView('chapter');
@@ -109,6 +154,40 @@ export function App() {
     });
   };
 
+  const handleToggleWatched = (lectureUrl: string) => {
+    setWatchedLectures(prev => {
+      const next = new Set(prev);
+      if (next.has(lectureUrl)) {
+        next.delete(lectureUrl);
+      } else {
+        next.add(lectureUrl);
+      }
+      try {
+        localStorage.setItem('ai-fp-watched-lectures', JSON.stringify(Array.from(next)));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
+  const handleToggleSolved = (problemKey: string) => {
+    setSolvedProblems(prev => {
+      const next = new Set(prev);
+      if (next.has(problemKey)) {
+        next.delete(problemKey);
+      } else {
+        next.add(problemKey);
+      }
+      try {
+        localStorage.setItem('ai-fp-solved-problems', JSON.stringify(Array.from(next)));
+      } catch {
+        // ignore
+      }
+      return next;
+    });
+  };
+
   const activeChapter = getChapterById(currentChapterId) || ALL_CHAPTERS[0];
 
   return (
@@ -128,6 +207,10 @@ export function App() {
           onSelectChapter={handleSelectChapter}
           onSelectView={handleSelectView}
           readChapters={readChapters}
+          watchedLectures={watchedLectures}
+          solvedProblems={solvedProblems}
+          activeRole={activeRole}
+          onSelectRole={handleSelectRole}
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
         />
@@ -139,6 +222,10 @@ export function App() {
               onOpenTools={() => handleSelectView('tools')}
               onOpenResources={() => handleSelectView('resources')}
               readChapters={readChapters}
+              watchedLectures={watchedLectures}
+              solvedProblems={solvedProblems}
+              activeRole={activeRole}
+              onSelectRole={handleSelectRole}
             />
           )}
 
@@ -148,6 +235,11 @@ export function App() {
               onSelectChapter={handleSelectChapter}
               isRead={readChapters.has(activeChapter.id)}
               onToggleRead={handleToggleRead}
+              watchedLectures={watchedLectures}
+              onToggleWatched={handleToggleWatched}
+              solvedProblems={solvedProblems}
+              onToggleSolved={handleToggleSolved}
+              activeRole={activeRole}
             />
           )}
 

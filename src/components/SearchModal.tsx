@@ -41,13 +41,30 @@ export const SearchModal: React.FC<SearchModalProps> = ({
 
   const filtered = ALL_CHAPTERS.filter(ch => {
     const q = query.toLowerCase();
-    return (
+    const matchesBasic = (
       ch.number.includes(q) ||
       ch.title.toLowerCase().includes(q) ||
       ch.moduleName.toLowerCase().includes(q) ||
       ch.problemStatement.toLowerCase().includes(q) ||
       ch.motto.toLowerCase().includes(q)
     );
+    if (matchesBasic) return true;
+
+    const matchesRole = ch.targetRoles?.some(r => r.toLowerCase().includes(q));
+    if (matchesRole) return true;
+
+    const matchesLecture = ch.lectures?.some(l => 
+      l.title.toLowerCase().includes(q) || l.speaker.toLowerCase().includes(q)
+    );
+    if (matchesLecture) return true;
+
+    const matchesLab = ch.labs && (
+      ch.labs.problemA.title.toLowerCase().includes(q) ||
+      ch.labs.problemA.problemStatement.toLowerCase().includes(q) ||
+      ch.labs.problemB.title.toLowerCase().includes(q) ||
+      ch.labs.problemB.problemStatement.toLowerCase().includes(q)
+    );
+    return Boolean(matchesLab);
   });
 
   return (

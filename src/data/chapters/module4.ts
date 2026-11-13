@@ -2,12 +2,14 @@ import type { Chapter } from '../../types/curriculum';
 
 export const MODULE_4_CHAPTERS: Chapter[] = [
   {
-    id: "17-when-to-prompt-rag-finetune",
-    number: "17",
+    id: "21-when-to-prompt-rag-finetune",
+    number: "21",
     title: "When to Prompt, RAG, Fine-Tune, or Pre-Train",
     moduleId: "custom-models",
     moduleName: "Custom Models & Adaptation",
+    trackNumber: 4,
     readTime: "16 min",
+    targetRoles: ['ai-engineer', 'agent-architect', 'fde'],
     motto: "Prompting teaches task format; RAG provides dynamic facts; Fine-tuning internalizes style, domain syntax, and latency efficiency.",
     problemStatement: "Engineering teams waste months and hundreds of thousands of dollars attempting to fine-tune open-source models with new domain knowledge, only for the model to hallucinate or suffer catastrophic forgetting. Knowing the exact boundary between Prompting, RAG, and Fine-Tuning is the quintessential AI Engineer decision.",
     coreConcepts: [
@@ -35,43 +37,14 @@ export const MODULE_4_CHAPTERS: Chapter[] = [
       title: "Adaptation Strategy Evaluator (Decision Engine)",
       description: "A programmatic scoring engine mapping engineering requirements to the optimal AI adaptation architecture.",
       code: `def recommend_ai_strategy(reqs):
-    """
-    Evaluates:
-    - knowledge_type: 'static_syntax_style' vs 'dynamic_fast_changing'
-    - latency_critical: bool (e.g. <200ms required)
-    - cost_sensitivity: 'high' vs 'low'
-    - verifiable_citations_required: bool
-    """
     recommendations = []
-    
     if reqs.get("verifiable_citations_required"):
-        recommendations.append("MANDATORY: RAG (Retrieval-Augmented Generation) for grounded source citations.")
-        
+        recommendations.append("MANDATORY: RAG for grounded citations.")
     if reqs.get("knowledge_type") == "dynamic_fast_changing":
-        recommendations.append("USE: RAG or Dynamic Tool Execution. Do NOT fine-tune for fast-changing facts.")
-        
+        recommendations.append("USE: RAG. Do not fine-tune for fast-changing facts.")
     if reqs.get("knowledge_type") == "static_syntax_style" and reqs.get("cost_sensitivity") == "high":
-        recommendations.append("USE: LoRA Fine-Tuning on a Small Language Model (e.g. LLaMA-3-8B) to eliminate long prompt tokens and replace expensive frontier models.")
-        
-    if reqs.get("latency_critical") and reqs.get("cost_sensitivity") == "high":
-        recommendations.append("USE: Quantized Self-Hosted Fine-Tuned Model (vLLM / AWQ) to minimize TTFT and avoid cloud network overhead.")
-        
-    if not recommendations:
-        recommendations.append("USE: Zero-Shot / Few-Shot Prompting with Frontier API (fastest time to production).")
-        
-    return recommendations
-
-specs = {
-    "knowledge_type": "static_syntax_style",
-    "latency_critical": True,
-    "cost_sensitivity": "high",
-    "verifiable_citations_required": False
-}
-
-results = recommend_ai_strategy(specs)
-print("Recommended Architectural Strategy:")
-for r in results:
-    print("-", r)`
+        recommendations.append("USE: LoRA Fine-Tuning on 8B SLM to cut prompt overhead.")
+    return recommendations or ["USE: Prompting with Frontier API."]`
     },
     productionPitfalls: [
       "Attempting to 'teach' an LLM new product facts via fine-tuning instead of RAG; models hallucinate facts but learn styles easily.",
@@ -95,15 +68,64 @@ for r in results:
         correctIndex: 0,
         explanation: "Neural network weights represent probabilistic representations, not relational databases. Fine-tuning to memorize facts leads to hallucinations and cannot keep up with real-time updates; RAG is designed specifically for this."
       }
-    ]
+    ],
+    simulatorType: 'fde-economics',
+    labs: {
+      problemA: {
+        title: "Algorithmic Lab: Multi-Attribute Adaptation Strategy Scorer",
+        subtitle: "Core DSA: Multi-Criteria Weighted Decision Matrix",
+        problemStatement: "Implement `score_adaptation_path(weights: dict[str, float], criteria: dict[str, float]) -> str` which scores options: `['PROMPT', 'RAG', 'FINE_TUNE', 'PRE_TRAIN']` based on normalized weights across cost, latency, dynamic factual requirement, and syntax consistency.",
+        starterCode: `def score_adaptation_path(weights: dict[str, float], criteria: dict[str, float]) -> str:
+    # TODO: Calculate weighted scores
+    pass`,
+        solutionCode: `def score_adaptation_path(weights: dict[str, float], criteria: dict[str, float]) -> str:
+    # Rule overrides:
+    if criteria.get("dynamic_facts", 0) > 0.8:
+        return "RAG"
+    if criteria.get("unique_alphabet_pretraining", 0) > 0.8:
+        return "PRE_TRAIN"
+    if criteria.get("strict_syntax_latency", 0) > 0.7:
+        return "FINE_TUNE"
+    return "PROMPT"`,
+        testCases: [
+          {
+            input: '{"dynamic_facts": 0.95}',
+            expectedOutput: '"RAG"',
+            explanation: "Dynamic facts override fine-tuning and pre-training."
+          }
+        ]
+      },
+      problemB: {
+        title: "Production Systems Debugging: The Catastrophic Forgetting Outage",
+        subtitle: "Production Systems Bug: Fine-tuning on 10,000 legal contracts destroys general coding ability",
+        problemStatement: "A company fine-tuned LLaMA-3-8B on legal contracts. While legal terminology improved, the model lost basic arithmetic and Python formatting abilities. Fix the training mix using rehearsal replay buffers (adding 10-20% general instruction data).",
+        starterCode: `# Buggy pure-domain dataset:
+# dataset = legal_contracts_only`,
+        solutionCode: `# Fix: Rehearsal Buffer Mixing
+def mix_fine_tuning_dataset(domain_dataset, general_dataset, general_ratio=0.15):
+    # Interleave 15% general instruct data (OpenHermes / SlimOrca)
+    # to preserve base model cognitive reasoning and prevent catastrophic forgetting:
+    num_general = int(len(domain_dataset) * (general_ratio / (1 - general_ratio)))
+    return domain_dataset + general_dataset[:num_general]`,
+        testCases: [
+          {
+            input: 'Domain dataset mixed with 15% general instruct replay',
+            expectedOutput: 'Domain task performance maintained while GSM8K and HumanEval scores drop < 2%.',
+            explanation: "Replay buffers stabilize weights in early transformer layers."
+          }
+        ]
+      }
+    }
   },
   {
-    id: "18-dataset-curation-synthetic-data",
-    number: "18",
+    id: "22-dataset-curation-synthetic-data",
+    number: "22",
     title: "Synthetic Data Generation & Dataset Curation",
     moduleId: "custom-models",
     moduleName: "Custom Models & Adaptation",
+    trackNumber: 4,
     readTime: "19 min",
+    targetRoles: ['ai-engineer', 'agent-architect'],
     motto: "In modern AI engineering, quality trumps quantity: 1,000 pristine instruction pairs outperform 100,000 noisy scraped samples.",
     problemStatement: "The phrase 'Garbage In, Garbage Out' is amplified by machine learning. Naively fine-tuning on dirty, uncurated data degrades base model reasoning, causes repetitive loops, and teaches sycophancy. Mastering synthetic data curation with frontier teacher models and algorithmic filtering is the primary differentiator of elite AI engineers.",
     coreConcepts: [
@@ -118,7 +140,7 @@ for r in results:
       },
       {
         title: "Synthetic Data Curation & Filtering Pipeline",
-        summary: "Using frontier models (Claude 3.5 Sonnet / GPT-4o) as teachers to bootstrap datasets for smaller student models.",
+        summary: "Using frontier models as teachers to bootstrap datasets for smaller student models.",
         content: [
           "Evolutionary Prompting (Evol-Instruct): Start with basic seed prompts; ask teacher LLM to increase reasoning depth, add constraints, or introduce edge cases.",
           "Deduplication (MinHash LSH): Remove duplicate or near-duplicate examples to prevent overfitting.",
@@ -131,53 +153,21 @@ for r in results:
       title: "Synthetic Instruction Quality Filter & Deduplicator",
       description: "Filtering synthetic instruction datasets using heuristic filters, schema validation, and Jaccard similarity deduplication.",
       code: `def jaccard_similarity(str1, str2):
-    s1 = set(str1.lower().split())
-    s2 = set(str2.lower().split())
-    if not s1 or not s2:
-        return 0.0
-    return len(s1.intersection(s2)) / len(s1.union(s2))
+    s1, s2 = set(str1.lower().split()), set(str2.lower().split())
+    return len(s1 & s2) / len(s1 | s2) if (s1 | s2) else 0.0
 
-def curate_dataset(raw_samples, similarity_threshold=0.8):
+def curate_dataset(raw_samples, threshold=0.8):
     curated = []
-    
-    for sample in raw_samples:
-        prompt = sample.get("prompt", "").strip()
-        response = sample.get("response", "").strip()
-        
-        # Rule 1: Length & non-empty filters
-        if len(prompt) < 10 or len(response) < 10:
-            continue
-            
-        # Rule 2: Sycophancy / refusal filter
-        refusal_phrases = ["as an ai language model", "i cannot assist with that"]
-        if any(rp in response.lower() for rp in refusal_phrases):
-            continue
-            
-        # Rule 3: Deduplication against already accepted samples
-        is_duplicate = False
-        for accepted in curated:
-            if jaccard_similarity(prompt, accepted["prompt"]) > similarity_threshold:
-                is_duplicate = True
-                break
-        if is_duplicate:
-            continue
-            
-        curated.append({"prompt": prompt, "response": response})
-        
+    for s in raw_samples:
+        p, r = s.get("prompt", "").strip(), s.get("response", "").strip()
+        if len(p) < 10 or len(r) < 10: continue
+        if any(rp in r.lower() for rp in ["as an ai language model", "i cannot assist"]): continue
+        if any(jaccard_similarity(p, c["prompt"]) > threshold for c in curated): continue
+        curated.append({"prompt": p, "response": r})
     return curated
 
-# Raw uncurated synthetic data batch
-raw_batch = [
-    {"prompt": "Convert 50 USD to EUR", "response": "50 USD is approximately 46.50 EUR."},
-    {"prompt": "convert 50 usd to eur please", "response": "46.50 EUR"}, # Duplicate
-    {"prompt": "Short", "response": "Too short"},                         # Low quality
-    {"prompt": "Write SQL to find top users", "response": "SELECT * FROM users ORDER BY score DESC LIMIT 10;"}
-]
-
-clean_data = curate_dataset(raw_batch)
-print(f"Retained {len(clean_data)} / {len(raw_batch)} samples after curation:")
-for item in clean_data:
-    print("- Prompt:", item["prompt"])`
+data = [{"prompt": "Convert 50 USD to EUR", "response": "46.50 EUR"}, {"prompt": "convert 50 usd to eur please", "response": "46.50"}]
+print("Curated count:", len(curate_dataset(data)))`
     },
     productionPitfalls: [
       "Training student models on raw outputs containing teacher model apologies ('As an AI, I am unable...').",
@@ -201,15 +191,65 @@ for item in clean_data:
         correctIndex: 0,
         explanation: "When identical or near-identical prompts appear multiple times in fine-tuning datasets, gradient descent repeatedly pushes weights toward memorizing those specific tokens, leading to repetition loops and loss of generalizability."
       }
-    ]
+    ],
+    simulatorType: 'lora',
+    labs: {
+      problemA: {
+        title: "Algorithmic Lab: MinHash LSH Near-Duplicate Deduplication",
+        subtitle: "Core DSA: Locality Sensitive Hashing & Jaccard Estimation",
+        problemStatement: "Implement `minhash_signature(tokens: set[str], num_hashes: int = 16) -> list[int]` using hash functions $h_i(x) = (a_i \\times \\text{hash}(x) + b_i) \\pmod p$ to compute a compact signature representing token sets for fast cluster deduplication.",
+        starterCode: `def minhash_signature(tokens: set[str], num_hashes: int = 16) -> list[int]:
+    # TODO: Compute MinHash signature
+    pass`,
+        solutionCode: `def minhash_signature(tokens: set[str], num_hashes: int = 16) -> list[int]:
+    if not tokens: return [0] * num_hashes
+    p = 2147483647
+    sig = [float('inf')] * num_hashes
+    for t in tokens:
+        raw_h = hash(t)
+        for i in range(num_hashes):
+            val = (3 * (i + 1) * raw_h + 7 * (i + 1)) % p
+            if val < sig[i]:
+                sig[i] = val
+    return sig`,
+        testCases: [
+          {
+            input: 'tokens1={"hello", "world"}, tokens2={"hello", "world"}',
+            expectedOutput: 'Identical 16-integer MinHash signatures',
+            explanation: "Identical token sets produce identical signatures."
+          }
+        ]
+      },
+      problemB: {
+        title: "Production Systems Debugging: The Sycophantic Synthetic Data Contamination",
+        subtitle: "Production Systems Bug: Teacher model hallucinations baked into fine-tuned weights",
+        problemStatement: "A team used GPT-4o to generate 50,000 synthetic Python code solutions. They fine-tuned an 8B model. The model hallucinated non-existent library methods (`import pandas; pandas.magic_clean()`). Rewrite the curation pipeline using sandbox verification where code must execute without error.",
+        starterCode: `# Unverified data pipeline:
+# dataset.append({"instruction": prompt, "code": raw_llm_code})`,
+        solutionCode: `# Production Execution-Gated Curation:
+def curate_synthetic_code(prompt: str, generated_code: str, test_suite: str) -> bool:
+    # Run code against automated unit tests inside an isolated sandbox
+    sandbox_result = execute_untrusted_python(f"{generated_code}\\n\\n{test_suite}", timeout_sec=5)
+    return sandbox_result.get("exit_code") == 0 and sandbox_result.get("status") == "COMPLETED"`,
+        testCases: [
+          {
+            input: 'Hallucinated method call `pandas.magic_clean()`',
+            expectedOutput: 'AttributeError in sandbox -> Rejected from fine-tuning dataset',
+            explanation: "Code execution gates ensure 100% of fine-tuned code examples are syntactically and logically valid."
+          }
+        ]
+      }
+    }
   },
   {
-    id: "19-supervised-fine-tuning-sft",
-    number: "19",
+    id: "23-supervised-fine-tuning-sft",
+    number: "23",
     title: "Supervised Fine-Tuning (SFT) Mechanics",
     moduleId: "custom-models",
     moduleName: "Custom Models & Adaptation",
+    trackNumber: 4,
     readTime: "22 min",
+    targetRoles: ['ai-engineer'],
     motto: "Fine-tuning does not teach new facts; it adjusts the transition probabilities between existing semantic concepts.",
     problemStatement: "Pre-trained base models (e.g. LLaMA 3 Base) are raw document continuers. If you ask 'What is the capital of France?', a base model might respond with 'and what is its population?'. Supervised Fine-Tuning (SFT) transforms raw text predictors into instruction-following conversational assistants.",
     coreConcepts: [
@@ -240,38 +280,18 @@ for item in clean_data:
       code: `import math
 
 def cross_entropy_loss_with_mask(predicted_probs, target_token_ids, ignore_index=-100):
-    """
-    predicted_probs: list of probabilities assigned to target tokens at each position
-    target_token_ids: list of actual token IDs (-100 for masked tokens)
-    """
-    loss_sum = 0.0
-    active_tokens_count = 0
-    
+    loss_sum, active = 0.0, 0
     for prob, target in zip(predicted_probs, target_token_ids):
-        if target == ignore_index:
-            # Prompt token: do not compute loss!
-            continue
-            
-        # Standard negative log likelihood: -log(P(target))
-        loss = -math.log(max(prob, 1e-12))
-        loss_sum += loss
-        active_tokens_count += 1
-        
-    if active_tokens_count == 0:
-        return 0.0
-    return loss_sum / active_tokens_count
+        if target == ignore_index: continue
+        loss_sum += -math.log(max(prob, 1e-12))
+        active += 1
+    return loss_sum / active if active else 0.0
 
-# Sequence of 6 tokens: 3 prompt tokens + 3 completion tokens
-# User Prompt: "Hi" -> [10, 20, 30]
-# Assistant Output: "Hello world" -> [40, 50, 60]
+# 3 prompt tokens (masked -100) + 3 completion tokens
 target_tokens = [-100, -100, -100, 40, 50, 60]
-
-# Model probabilities predicted at each step for the target token
 model_predictions = [0.05, 0.02, 0.10, 0.85, 0.72, 0.91]
-
 loss = cross_entropy_loss_with_mask(model_predictions, target_tokens)
-print("Calculated Masked SFT Loss:", round(loss, 4))
-print("Notice: Prompt tokens had 0 contribution to loss gradient!")`
+print("Masked SFT Loss:", round(loss, 4))`
     },
     productionPitfalls: [
       "Calculating loss on user prompt tokens: This forces the model to memorize user questions instead of learning how to answer.",
@@ -295,15 +315,66 @@ print("Notice: Prompt tokens had 0 contribution to loss gradient!")`
         correctIndex: 0,
         explanation: "In instruction tuning, our objective is purely to optimize the conditional probability of the assistant's response given the user prompt. Computing loss on the prompt itself degrades performance."
       }
-    ]
+    ],
+    simulatorType: 'lora',
+    labs: {
+      problemA: {
+        title: "Algorithmic Lab: FlashAttention Sequence Packing & Boundary Tensor Builder",
+        subtitle: "Core DSA: 1D Bin Packing & Cumulative Index Offsets",
+        problemStatement: "Given a list of tokenized training examples of lengths `[120, 450, 300, 80]`, pack them into a maximum context length of 1024 without wasteful padding, returning `(packed_tensor, cumulative_seq_lens)` for FlashAttention cu_seqlens indexing.",
+        starterCode: `def pack_sequences(seqs: list[list[int]], max_len: int = 1024) -> tuple[list[int], list[int]]:
+    # TODO: Pack sequences greedily and return cu_seqlens
+    pass`,
+        solutionCode: `def pack_sequences(seqs: list[list[int]], max_len: int = 1024) -> tuple[list[int], list[int]]:
+    packed = []
+    cu_seqlens = [0]
+    curr_len = 0
+    for s in seqs:
+        if curr_len + len(s) <= max_len:
+            packed.extend(s)
+            curr_len += len(s)
+            cu_seqlens.append(curr_len)
+        else:
+            break
+    return packed, cu_seqlens`,
+        testCases: [
+          {
+            input: 'seqs with lengths 2, 3 in max_len=10',
+            expectedOutput: 'packed length 5, cu_seqlens=[0, 2, 5]',
+            explanation: "Enables variable-length training in PyTorch without padding FLOP waste."
+          }
+        ]
+      },
+      problemB: {
+        title: "Production Systems Debugging: The Unmasked Prompt Loss Catastrophe",
+        subtitle: "Production Systems Bug: Model memorizing user prompts and echoing questions",
+        problemStatement: "A fine-tuned model started repeating the user's question back verbatim instead of answering. Examination of the PyTorch training loop revealed `labels = input_ids.clone()`. Fix the training script using tokenizer prompt masking.",
+        starterCode: `# Buggy training step:
+# labels = inputs["input_ids"].clone() # Computes loss over user prompt!`,
+        solutionCode: `# Fix: Tokenizer Prompt Masking
+labels = inputs["input_ids"].clone()
+prompt_len = len(tokenizer.encode(prompt_text, add_special_tokens=False))
+# Set all tokens in the user prompt section to -100 so cross_entropy ignores them:
+labels[:, :prompt_len] = -100`,
+        testCases: [
+          {
+            input: 'labels[:, :prompt_len] = -100',
+            expectedOutput: 'Gradients computed strictly on assistant response tokens',
+            explanation: "Ensures the model learns conditional generation rather than prompt memorization."
+          }
+        ]
+      }
+    }
   },
   {
-    id: "20-peft-lora-qlora",
-    number: "20",
+    id: "24-peft-lora-qlora",
+    number: "24",
     title: "Parameter-Efficient Fine-Tuning: LoRA & QLoRA",
     moduleId: "custom-models",
     moduleName: "Custom Models & Adaptation",
+    trackNumber: 4,
     readTime: "24 min",
+    targetRoles: ['ai-engineer'],
     motto: "Instead of updating 70 billion parameters, Low-Rank Adaptation (LoRA) freezes the base model and trains two tiny low-rank matrices.",
     problemStatement: "Full fine-tuning of a 70B parameter model requires updating 140 GB of weights plus storing optimizer states (Adam stores 8 bytes per parameter), demanding over 800 GB of GPU VRAM across multiple 80GB GPUs. LoRA slashes trainable parameters by 99% while achieving 99% of full fine-tuning performance.",
     coreConcepts: [
@@ -337,43 +408,22 @@ print("Notice: Prompt tokens had 0 contribution to loss gradient!")`
 
 class LoRALinear:
     def __init__(self, in_features, out_features, rank=8, alpha=16):
-        self.in_features = in_features
-        self.out_features = out_features
+        self.in_dim = in_features
+        self.out_dim = out_features
         self.rank = rank
         self.scaling = alpha / rank
-        
-        # Frozen base weight W0 (simulated with fixed numbers)
         self.w0 = [[0.1 for _ in range(out_features)] for _ in range(in_features)]
-        
-        # Trainable Matrix A: (in_features x rank) - Gaussian random
         self.lora_A = [[random.gauss(0, 0.02) for _ in range(rank)] for _ in range(in_features)]
-        
-        # Trainable Matrix B: (rank x out_features) - Initialized to ZERO!
         self.lora_B = [[0.0 for _ in range(out_features)] for _ in range(rank)]
 
     def forward(self, x):
-        # 1. Base forward pass: x @ W0
-        base_out = [sum(x[i] * self.w0[i][j] for i in range(self.in_features)) for j in range(self.out_features)]
-        
-        # 2. LoRA branch: (x @ A) @ B
-        # Step A: x @ A -> (1 x rank)
-        xa = [sum(x[i] * self.lora_A[i][r] for i in range(self.in_features)) for r in range(self.rank)]
-        # Step B: xa @ B -> (1 x out_features)
-        xab = [sum(xa[r] * self.lora_B[r][j] for r in range(self.rank)) for j in range(self.out_features)]
-        
-        # 3. Combine with scaling factor
-        return [b + self.scaling * ab for b, ab in zip(base_out, xab)]
+        base = [sum(x[i] * self.w0[i][j] for i in range(self.in_dim)) for j in range(self.out_dim)]
+        xa = [sum(x[i] * self.lora_A[i][r] for i in range(self.in_dim)) for r in range(self.rank)]
+        xab = [sum(xa[r] * self.lora_B[r][j] for r in range(self.rank)) for j in range(self.out_dim)]
+        return [b + self.scaling * ab for b, ab in zip(base, xab)]
 
-# Compare parameter counts for a 4096 x 4096 hidden projection
-dim = 4096
-rank = 8
-base_params = dim * dim
-lora_params = (dim * rank) + (rank * dim)
-savings = (1 - (lora_params / base_params)) * 100
-
-print(f"Base Parameters:    {base_params:,} (requires ~33 MB VRAM for weights + 134 MB for Adam)")
-print(f"LoRA (r={rank}) Params: {lora_params:,} (requires ~0.13 MB VRAM!)")
-print(f"Parameter Reduction: {savings:.2f}%")`
+layer = LoRALinear(4096, 4096, rank=8)
+print("Base params: 16,777,216 | LoRA params: 65,536 (99.6% reduction)")`
     },
     productionPitfalls: [
       "Targeting only Q and V projections: Modern research proves that applying LoRA to all linear layers (Q, K, V, O, Gate, Up, Down) yields far better performance.",
@@ -397,15 +447,66 @@ print(f"Parameter Reduction: {savings:.2f}%")`
         correctIndex: 0,
         explanation: "If B were randomly initialized, the output at step 0 would be corrupted by random noise. Initializing B to zero ensures ΔW is exactly zero until training begins."
       }
-    ]
+    ],
+    simulatorType: 'lora',
+    labs: {
+      problemA: {
+        title: "Algorithmic Lab: LoRA Weight Matrix Merger & Unsloth SVD",
+        subtitle: "Core DSA: Matrix Multiplication & In-Place Tensor Merging",
+        problemStatement: "Write a function `merge_lora_weights(W0: list[list[float]], A: list[list[float]], B: list[list[float]], alpha: float, rank: int) -> list[list[float]]` that computes $W_{\\text{merged}} = W_0 + \\frac{\\alpha}{r}(A \\times B)$ to bake adapter weights into the base matrix for zero-latency inference.",
+        starterCode: `def merge_lora_weights(W0: list[list[float]], A: list[list[float]], B: list[list[float]], alpha: float, rank: int) -> list[list[float]]:
+    # TODO: Compute delta W and add in-place
+    pass`,
+        solutionCode: `def merge_lora_weights(W0: list[list[float]], A: list[list[float]], B: list[list[float]], alpha: float, rank: int) -> list[list[float]]:
+    scaling = alpha / rank
+    d = len(A)
+    k = len(B[0])
+    r = rank
+    
+    # Compute delta = A @ B
+    delta = [[sum(A[i][m] * B[m][j] for m in range(r)) * scaling for j in range(k)] for i in range(d)]
+    # Add to W0
+    merged = [[W0[i][j] + delta[i][j] for j in range(k)] for i in range(d)]
+    return merged`,
+        testCases: [
+          {
+            input: 'W0 2x2 identity, A 2x1 [1, 2], B 1x2 [3, 4], alpha=1, rank=1',
+            expectedOutput: '[[4.0, 4.0], [6.0, 9.0]]',
+            explanation: "Delta W = [[3, 4], [6, 8]]. Adding W0 gives [[4, 4], [6, 9]]."
+          }
+        ]
+      },
+      problemB: {
+        title: "Production Systems Debugging: The Serving Adapter Latency Penalty",
+        subtitle: "Production Systems Bug: Keeping LoRA branches separate during online vLLM serving",
+        problemStatement: "A production service loaded an 8B model with 4 distinct LoRA adapters. Latency jumped 40% because the GPU executed separate forward passes for each LoRA branch. Fix the serving architecture using static offline adapter merges or Multi-LoRA vLLM batched kernel execution.",
+        starterCode: `# Sub-optimal: loading unmerged adapter in production single-tenant endpoint
+# model = PeftModel.from_pretrained(base_model, adapter_path)`,
+        solutionCode: `# Fix 1: Merge weights permanently for dedicated endpoint:
+model = model.merge_and_unload()
+model.save_pretrained("./merged_production_model")
+
+# Fix 2: If multi-tenant dynamic LoRA serving, enable vLLM LoRA engine:
+# vllm serve --model base-model --enable-lora --max-loras 4`,
+        testCases: [
+          {
+            input: 'model.merge_and_unload() executed prior to export',
+            expectedOutput: 'Serving latency identical to vanilla base model (zero adapter branch overhead)',
+            explanation: "Merging eliminates auxiliary matrix multiplications during decoding."
+          }
+        ]
+      }
+    }
   },
   {
-    id: "21-model-alignment-dpo-rlhf",
-    number: "21",
+    id: "25-model-alignment-dpo-rlhf",
+    number: "25",
     title: "Model Alignment: Direct Preference Optimization (DPO) & RLHF",
     moduleId: "custom-models",
     moduleName: "Custom Models & Adaptation",
+    trackNumber: 4,
     readTime: "23 min",
+    targetRoles: ['ai-engineer'],
     motto: "SFT teaches the model what to say; Preference Alignment (DPO) teaches the model what NOT to say.",
     problemStatement: "Supervised Fine-Tuning trains a model to imitate examples, but cannot effectively penalize subtle errors, sycophancy, or hallucinations. Traditional RLHF (Reinforcement Learning from Human Feedback via PPO) is notoriously unstable, complex, and requires training multiple neural networks. Direct Preference Optimization (DPO) revolutionizes alignment by optimizing preferences mathematically in closed form.",
     coreConcepts: [
@@ -413,7 +514,7 @@ print(f"Parameter Reduction: {savings:.2f}%")`
         title: "RLHF vs. DPO: The Architectural Shift",
         summary: "How DPO eliminated the need for complex reinforcement learning policy training.",
         content: [
-          "Traditional RLHF: 1) Train an SFT model, 2) Train a separate Reward Model on pairwise human rankings (Chosen vs Rejected), 3) Use PPO (Proximal Policy Optimization) with a KL-divergence penalty to update the policy against the reward model. Highly unstable and GPU-heavy.",
+          "Traditional RLHF: 1) Train an SFT model, 2) Train a separate Reward Model on pairwise human rankings (Chosen vs Rejected), 3) Use PPO with a KL-divergence penalty to update the policy against the reward model. Highly unstable and GPU-heavy.",
           "Direct Preference Optimization (DPO): Mathematically proves that the language model policy can implicitly represent its own reward function. Optimizes the policy directly on (prompt, chosen, rejected) triplets using a simple binary cross-entropy loss without training a separate reward model or using RL."
         ],
         mathFormula: "\\mathcal{L}_{\\text{DPO}}(\\pi_\\theta; \\pi_{\\text{ref}}) = - \\mathbb{E} \\left[ \\log \\sigma \\left( \\beta \\log \\frac{\\pi_\\theta(y_w \\mid x)}{\\pi_{\\text{ref}}(y_w \\mid x)} - \\beta \\log \\frac{\\pi_\\theta(y_l \\mid x)}{\\pi_{\\text{ref}}(y_l \\mid x)} \\right) \\right]"
@@ -437,47 +538,14 @@ print(f"Parameter Reduction: {savings:.2f}%")`
 def sigmoid(x):
     return 1.0 / (1.0 + math.exp(-max(min(x, 20), -20)))
 
-def dpo_loss(policy_chosen_logp, policy_rejected_logp,
-             ref_chosen_logp, ref_rejected_logp, beta=0.1):
-    """
-    Computes DPO loss for a single (prompt, chosen, rejected) triplet.
-    """
-    # Log-ratio of policy vs reference for chosen response
-    chosen_log_ratio = policy_chosen_logp - ref_chosen_logp
-    
-    # Log-ratio of policy vs reference for rejected response
-    rejected_log_ratio = policy_rejected_logp - ref_rejected_logp
-    
-    # Implicit reward difference scaled by beta
-    logits = beta * (chosen_log_ratio - rejected_log_ratio)
-    
-    # Negative log-sigmoid loss
-    loss = -math.log(max(sigmoid(logits), 1e-12))
-    return loss, logits
+def dpo_loss(pol_win, pol_lose, ref_win, ref_lose, beta=0.1):
+    win_ratio = pol_win - ref_win
+    lose_ratio = pol_lose - ref_lose
+    logits = beta * (win_ratio - lose_ratio)
+    return -math.log(max(sigmoid(logits), 1e-12)), logits
 
-# Example: Policy model strongly prefers the Chosen completion
-# Log-probabilities: log(P(completion | prompt))
-ref_chosen = -12.5
-ref_rejected = -13.0
-
-# Case 1: Policy improved on chosen, reduced probability of rejected
-policy_chosen_good = -10.2
-policy_rejected_good = -15.8
-
-loss_good, logits_good = dpo_loss(
-    policy_chosen_good, policy_rejected_good,
-    ref_chosen, ref_rejected, beta=0.1
-)
-print("Aligned Policy -> DPO Loss:", round(loss_good, 4), f"(Reward Margin: {logits_good:.2f})")
-
-# Case 2: Degraded Policy that preferred the rejected answer
-policy_chosen_bad = -14.0
-policy_rejected_bad = -11.0
-loss_bad, logits_bad = dpo_loss(
-    policy_chosen_bad, policy_rejected_bad,
-    ref_chosen, ref_rejected, beta=0.1
-)
-print("Misaligned Policy -> DPO Loss:", round(loss_bad, 4), f"(Reward Margin: {logits_bad:.2f})")`
+loss, margin = dpo_loss(-10.2, -15.8, -12.5, -13.0, beta=0.1)
+print(f"DPO Loss: {loss:.4f} (Implicit Reward Margin: {margin:.2f})")`
     },
     productionPitfalls: [
       "Running DPO before SFT: DPO requires the model to already be capable of generating valid responses; always run SFT first.",
@@ -501,6 +569,55 @@ print("Misaligned Policy -> DPO Loss:", round(loss_bad, 4), f"(Reward Margin: {l
         correctIndex: 0,
         explanation: "DPO mathematically re-formulates the RLHF objective such that the optimal policy can be trained directly on preference pairs using standard cross-entropy-style loss, avoiding reward models and PPO."
       }
-    ]
+    ],
+    simulatorType: 'lora',
+    labs: {
+      problemA: {
+        title: "Algorithmic Lab: Pairwise Margin & DPO Gradient Magnitude Calculator",
+        subtitle: "Core DSA: Sigmoid Derivatives & Weight Update Magnitudes",
+        problemStatement: "The gradient of DPO loss with respect to implicit reward margin is given by $\\sigma(-\\beta(r_w - r_l))$. Implement `dpo_gradient_weight(policy_win_logp: float, policy_lose_logp: float, ref_win_logp: float, ref_lose_logp: float, beta: float = 0.1) -> float` to measure update magnitude.",
+        starterCode: `def dpo_gradient_weight(p_w: float, p_l: float, r_w: float, r_l: float, beta: float = 0.1) -> float:
+    # TODO: Calculate gradient scaling factor
+    pass`,
+        solutionCode: `import math
+
+def dpo_gradient_weight(p_w: float, p_l: float, r_w: float, r_l: float, beta: float = 0.1) -> float:
+    diff = (p_w - r_w) - (p_l - r_l)
+    logits = beta * diff
+    # Sigmoid(-logits)
+    clipped = max(min(-logits, 20), -20)
+    return 1.0 / (1.0 + math.exp(-clipped))`,
+        testCases: [
+          {
+            input: 'p_w=-10, p_l=-20, r_w=-10, r_l=-10, beta=0.1',
+            expectedOutput: 'gradient weight ~= 0.2689',
+            explanation: "When policy already strongly prefers chosen, gradient dampens automatically."
+          }
+        ]
+      },
+      problemB: {
+        title: "Production Systems Debugging: The DPO Mode Collapse & Length Exploitation",
+        subtitle: "Production Systems Bug: Model generates 5x longer responses to game implicit reward",
+        problemStatement: "After DPO training, the model started generating 2,000-word essays for simple queries like 'What is 2+2?'. Root cause analysis showed human preference annotators consistently preferred longer answers in the training dataset (Length Bias). Fix the DPO objective using margin length-normalization.",
+        starterCode: `# Standard unnormalized DPO:
+# loss = dpo_loss(chosen_logp, rejected_logp, ref_chosen_logp, ref_rejected_logp)`,
+        solutionCode: `# Production Fix: Length-Normalized DPO Loss
+def length_normalized_dpo_loss(chosen_logp: float, rejected_logp: float,
+                               ref_chosen_logp: float, ref_rejected_logp: float,
+                               len_chosen: int, len_rejected: int, beta: float = 0.1):
+    # Normalize log probabilities by token length to neutralize verbosity bias:
+    norm_chosen = (chosen_logp - ref_chosen_logp) / max(1, len_chosen)
+    norm_rejected = (rejected_logp - ref_rejected_logp) / max(1, len_rejected)
+    logits = beta * (norm_chosen - norm_rejected)
+    return -math.log(max(1.0 / (1.0 + math.exp(-logits)), 1e-12))`,
+        testCases: [
+          {
+            input: 'Longer answer with lower per-token probability',
+            expectedOutput: 'Penalized correctly by length normalization, eliminating verbosity hacking.',
+            explanation: "Length-normalized DPO neutralizes human and model bias toward superficial verbosity."
+          }
+        ]
+      }
+    }
   }
 ];

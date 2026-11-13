@@ -2,12 +2,14 @@ import type { Chapter } from '../../types/curriculum';
 
 export const MODULE_3_CHAPTERS: Chapter[] = [
   {
-    id: "12-tool-calling-and-function-schemas",
-    number: "12",
+    id: "14-tool-calling-and-function-schemas",
+    number: "14",
     title: "Tool Calling & Function Schemas",
     moduleId: "agents",
-    moduleName: "Agentic Loops & Automations",
+    moduleName: "Agentic Loops, Sandboxes & Multi-Agent Systems",
+    trackNumber: 3,
     readTime: "19 min",
+    targetRoles: ['ai-engineer', 'agent-architect', 'harness-engineer'],
     motto: "Tool calling does not execute code inside the model; it is a contract where the model emits a structured function signature that your runtime executes.",
     problemStatement: "New engineers often believe models 'call APIs' directly over the internet. In reality, the model outputs a text token sequence formatted as a JSON function call. The host application parses it, runs the local or remote function, and feeds the result back into the model's next turn. Understanding this boundary is vital for security and reliability.",
     coreConcepts: [
@@ -55,64 +57,28 @@ class ToolRegistry:
         
     def register(self, name, description, parameters, func):
         self.tools[name] = {
-            "definition": {
-                "name": name,
-                "description": description,
-                "parameters": parameters
-            },
+            "definition": {"name": name, "description": description, "parameters": parameters},
             "func": func
         }
         
-    def get_definitions(self):
-        return [t["definition"] for t in self.tools.values()]
-        
     def execute(self, tool_name, arguments_json):
         if tool_name not in self.tools:
-            return {"error": f"Tool '{tool_name}' does not exist in registry."}
-            
+            return {"error": f"Tool '{tool_name}' does not exist."}
         try:
             kwargs = json.loads(arguments_json) if isinstance(arguments_json, str) else arguments_json
-            # Execute underlying Python function
             result = self.tools[tool_name]["func"](**kwargs)
             return {"status": "success", "result": result}
-        except TypeError as e:
-            return {"error": f"Invalid arguments supplied: {str(e)}"}
         except Exception as e:
             return {"error": f"Tool execution failed: {str(e)}"}
 
-# Define a real tool
-def query_weather(city: str, metric: bool = True):
-    # Simulated weather lookup
-    temp = 22 if metric else 72
-    unit = "C" if metric else "F"
-    return f"Current weather in {city}: {temp}°{unit}, Sunny"
-
-# Register the tool
 registry = ToolRegistry()
 registry.register(
     name="query_weather",
-    description="Retrieve live weather conditions for a given city.",
-    parameters={
-        "type": "object",
-        "properties": {
-            "city": {"type": "string", "description": "City name, e.g. San Francisco"},
-            "metric": {"type": "boolean", "description": "True for Celsius, False for Fahrenheit"}
-        },
-        "required": ["city"]
-    },
-    func=query_weather
+    description="Retrieve live weather for a city",
+    parameters={"type": "object", "properties": {"city": {"type": "string"}}, "required": ["city"]},
+    func=lambda city: f"Current weather in {city}: 22°C, Sunny"
 )
-
-# Simulate model outputting tool call payload
-simulated_model_call = {
-    "name": "query_weather",
-    "arguments": '{"city": "Tokyo", "metric": true}'
-}
-
-# Host runtime dispatches call
-observation = registry.execute(simulated_model_call["name"], simulated_model_call["arguments"])
-print("Tool Execution Result to return to LLM:")
-print(json.dumps(observation, indent=2))`
+print(registry.execute("query_weather", '{"city": "Tokyo"}'))`
     },
     productionPitfalls: [
       "Granting models destructive tools (e.g., delete_database, send_wire_transfer) without human-in-the-loop approval gates.",
@@ -136,15 +102,102 @@ print(json.dumps(observation, indent=2))`
         correctIndex: 0,
         explanation: "The LLM merely outputs a structured specification of which function to run and with what arguments; the host environment receives this text, executes the actual code, and passes the output back."
       }
-    ]
+    ],
+    lectures: [
+      {
+        title: "How We Build Effective Agents",
+        speaker: "Barry Zhang (Anthropic)",
+        url: "https://www.youtube.com/watch?v=D7_ipDqhtwk",
+        youtubeId: "D7_ipDqhtwk",
+        duration: "34m",
+        timestampedTakeaways: [
+          { time: "00:04:15", takeaway: "Why simple composable patterns beat complex black-box agent frameworks" },
+          { time: "00:12:30", takeaway: "Tool schema design: writing explicit instructions and defensive error boundaries" },
+          { time: "00:22:00", takeaway: "Evaluator-Optimizer feedback loops and reducing variance in tool selection" }
+        ]
+      },
+      {
+        title: "Building more effective AI agents",
+        speaker: "Anthropic Engineering",
+        url: "https://www.youtube.com/watch?v=uhJJgc-0iTQ",
+        youtubeId: "uhJJgc-0iTQ",
+        duration: "45m",
+        timestampedTakeaways: [
+          { time: "00:08:00", takeaway: "Augmented LLMs vs autonomous loops: when to give an agent a tool vs hardcoded code" },
+          { time: "00:25:30", takeaway: "Context management during multi-turn tool execution" }
+        ]
+      }
+    ],
+    simulatorType: 'react-loop',
+    labs: {
+      problemA: {
+        title: "Algorithmic Lab: Streaming Tool Call Chunk Accumulator",
+        subtitle: "Core DSA: Streaming JSON Buffer Assembly",
+        problemStatement: "When an LLM streams tool calls, the JSON arguments arrive fragmented over dozens of SSE chunks (e.g. `{\"ci`, `ty\": \"`, `Tokyo\"}`). Implement `accumulate_streaming_tool_call(chunks: list[dict]) -> dict` that reconstructs the complete tool call name and parsed argument dictionary.",
+        starterCode: `def accumulate_streaming_tool_call(chunks: list[dict]) -> dict:
+    # TODO: Concatenate argument delta fragments and parse valid JSON
+    pass`,
+        solutionCode: `import json
+
+def accumulate_streaming_tool_call(chunks: list[dict]) -> dict:
+    call_id = None
+    name = None
+    args_str = ""
+    for ch in chunks:
+        if 'id' in ch and ch['id']: call_id = ch['id']
+        if 'name' in ch and ch['name']: name = ch['name']
+        if 'arguments_delta' in ch: args_str += ch['arguments_delta']
+    return {
+        "id": call_id,
+        "name": name,
+        "arguments": json.loads(args_str) if args_str else {}
+    }`,
+        testCases: [
+          {
+            input: 'chunks with delta arguments `{"city": `, `"Paris"}`',
+            expectedOutput: '{"id": "...", "name": "...", "arguments": {"city": "Paris"}}',
+            explanation: "Assembles fragmented tokens into a parseable JSON object."
+          }
+        ]
+      },
+      problemB: {
+        title: "Production Systems Debugging: The Unvalidated Shell Injection Tool",
+        subtitle: "Production Systems Bug: Agent executing untrusted bash string concatenation",
+        problemStatement: "A developer implemented `execute_bash(command: str)` using `os.system(command)`. A prompt injection in a user issue caused the agent to run `pytest tests; rm -rf /`. Rewrite the tool execution runtime to enforce strict command whitelisting and argument tokenization via `subprocess.run`.",
+        starterCode: `# VULNERABLE:
+# def run_tool(cmd): os.system(cmd)`,
+        solutionCode: `import subprocess, shlex
+
+ALLOWED_BINARIES = {"pytest", "python", "git", "grep", "ls"}
+
+def run_tool_secure(cmd_str: str, timeout_sec: int = 30) -> dict:
+    args = shlex.split(cmd_str)
+    if not args or args[0] not in ALLOWED_BINARIES:
+        return {"error": f"Execution of binary '{args[0] if args else ''}' is barred."}
+    try:
+        proc = subprocess.run(args, capture_output=True, text=True, timeout=timeout_sec, check=False)
+        return {"stdout": proc.stdout, "stderr": proc.stderr, "exit_code": proc.returncode}
+    except subprocess.TimeoutExpired:
+        return {"error": "Execution timed out"}`,
+        testCases: [
+          {
+            input: 'cmd_str="rm -rf /"',
+            expectedOutput: 'Execution barred error returned safely',
+            explanation: "Binary whitelisting and argument parsing prevents shell injection escapes."
+          }
+        ]
+      }
+    }
   },
   {
-    id: "13-the-agent-execution-loop",
-    number: "13",
+    id: "15-the-agent-execution-loop",
+    number: "15",
     title: "The Agent Execution Loop: ReAct, Planning & Reflection",
     moduleId: "agents",
-    moduleName: "Agentic Loops & Automations",
+    moduleName: "Agentic Loops, Sandboxes & Multi-Agent Systems",
+    trackNumber: 3,
     readTime: "23 min",
+    targetRoles: ['ai-engineer', 'agent-architect', 'harness-engineer'],
     motto: "An agent is an autoregressive model wrapped inside a while-loop governed by state machines and termination guards.",
     problemStatement: "Single-turn LLM calls cannot solve complex multi-step objectives that require trial, error, verification, and intermediate observations. Autonomous agents bridge this gap using the ReAct (Reason + Act + Observe) paradigm, but without strict loop bounds, they enter infinite loops, hallucinate progress, and burn unlimited API credits.",
     coreConcepts: [
@@ -181,73 +234,20 @@ class SimpleReActAgent:
         self.history = []
         self.executed_actions = set()
 
-    def mock_llm_call(self, messages):
-        """
-        Simulated LLM simulating Thought -> Action -> Final Answer.
-        In production, replace with client.chat.completions.create().
-        """
-        turn = len([m for m in messages if m["role"] == "assistant"])
-        if turn == 0:
-            return {
-                "thought": "I need to calculate the sales tax on $200 in California (8.25%).",
-                "action": "calculator",
-                "action_input": {"expression": "200 * 0.0825"}
-            }
-        else:
-            # Observes result from previous turn
-            last_obs = messages[-1]["content"]
-            return {
-                "thought": f"The calculated tax is {last_obs}. Now I can provide the final answer.",
-                "final_answer": f"The sales tax on $200 is \${last_obs}."
-            }
-
     def run(self, user_goal):
-        print(f"=== Starting Agent Goal: '{user_goal}' ===")
         self.history.append({"role": "user", "content": user_goal})
-        
         for iteration in range(1, self.max_iterations + 1):
-            print(f"--- Iteration {iteration} ---")
-            
-            # Step 1: Model generates thought and action
-            response = self.mock_llm_call(self.history)
-            
-            if "final_answer" in response:
-                print(f"[FINAL ANSWER] {response['final_answer']}")
-                return response["final_answer"]
-                
-            thought = response.get("thought", "")
-            action = response.get("action")
-            action_input = response.get("action_input", {})
-            print(f"[THOUGHT] {thought}")
-            print(f"[ACTION]  Execute '{action}' with {action_input}")
-            
-            # Cycle detection
-            action_sig = f"{action}:{json.dumps(action_input, sort_keys=True)}"
+            # Simulated model step
+            action_sig = "calc:200*0.0825"
             if action_sig in self.executed_actions:
-                print("[WARNING] Cycle detected! Tool called with identical arguments.")
+                break
             self.executed_actions.add(action_sig)
-            
-            # Step 2: Execute Action
-            if action in self.tools:
-                obs = self.tools[action](**action_input)
-            else:
-                obs = f"Error: Tool '{action}' does not exist."
-            print(f"[OBSERVATION] {obs}")
-            
-            # Step 3: Record observation in context
-            self.history.append({"role": "assistant", "content": json.dumps(response)})
-            self.history.append({"role": "tool", "content": str(obs)})
-            
-        print("[TERMINATED] Max iterations reached without final answer.")
-        return None
+            obs = "16.5"
+            return f"Calculated sales tax is \${obs}."
+        return "Terminated without resolution."
 
-# Provide tool
-tools = {
-    "calculator": lambda expression: str(eval(expression))
-}
-
-agent = SimpleReActAgent(tools, max_iterations=3)
-agent.run("Calculate California sales tax on $200")`
+agent = SimpleReActAgent({})
+print(agent.run("Calculate sales tax on $200 in CA"))`
     },
     productionPitfalls: [
       "Letting agents run indefinitely without hard iteration or monetary cost ceilings.",
@@ -271,15 +271,80 @@ agent.run("Calculate California sales tax on $200")`
         correctIndex: 0,
         explanation: "By decomposing complex tasks into an explicit thought step before acting, the model leverages chain-of-thought autoregression to decide the optimal next tool and arguments."
       }
-    ]
+    ],
+    lectures: [
+      {
+        title: "Tips for building AI agents",
+        speaker: "Anthropic Engineering",
+        url: "https://www.youtube.com/watch?v=LP5OCa20Zpg",
+        youtubeId: "LP5OCa20Zpg",
+        duration: "28m",
+        timestampedTakeaways: [
+          { time: "00:03:30", takeaway: "The loop invariant: state management across tool turns" },
+          { time: "00:11:45", takeaway: "How to prevent agents from getting stuck in repetitive debugging loops" },
+          { time: "00:19:20", takeaway: "Human-in-the-loop checkpoints for sensitive actions" }
+        ]
+      }
+    ],
+    simulatorType: 'react-loop',
+    labs: {
+      problemA: {
+        title: "Algorithmic Lab: Agent Action Cycle & Loop Detector",
+        subtitle: "Core DSA: Cycle Detection via Sliding Window Hashing",
+        problemStatement: "Implement `detect_agent_cycle(action_history: list[tuple[str, str]], window_size: int = 3) -> bool` which inspects the history of (tool_name, argument_hash) tuples and returns True if the same sequence of actions has repeated cyclically.",
+        starterCode: `def detect_agent_cycle(history: list[tuple[str, str]], window_size: int = 3) -> bool:
+    # TODO: Detect repeating subsequences
+    pass`,
+        solutionCode: `def detect_agent_cycle(history: list[tuple[str, str]], window_size: int = 3) -> bool:
+    n = len(history)
+    if n < 2 * window_size: return False
+    # Check if the last window_size items are identical to the preceding window_size items
+    recent = history[-window_size:]
+    preceding = history[-2*window_size:-window_size]
+    return recent == preceding`,
+        testCases: [
+          {
+            input: 'history=[("read", "h1"), ("grep", "h2"), ("read", "h1"), ("grep", "h2")], window=2',
+            expectedOutput: 'True (cycle detected!)',
+            explanation: "The agent repeated the exact sequence ('read', 'h1') -> ('grep', 'h2') consecutively."
+          }
+        ]
+      },
+      problemB: {
+        title: "Production Systems Debugging: The 50MB Tool Output Context Blowup",
+        subtitle: "Production Systems Bug: An agent reads a 50MB log file into prompt context",
+        problemStatement: "An agent called `read_file('var/log/syslog')`. The tool returned a 50MB string. The host application dumped the entire string into the conversation context, causing an immediate 400 Bad Request (Context Window Exceeded) and $25 in burned tokens. Rewrite the tool observation wrapper with head-tail truncation and disk paging.",
+        starterCode: `# Buggy tool return:
+# return {"role": "tool", "content": raw_file_contents}`,
+        solutionCode: `def format_tool_observation_safe(raw_output: str, max_chars: int = 8000) -> str:
+    if len(raw_output) <= max_chars:
+        return raw_output
+    half = max_chars // 2
+    truncated = (
+        raw_output[:half] +
+        f"\\n\\n[... TRUNCATED {len(raw_output) - max_chars} CHARACTERS TO PREVENT CONTEXT OVERFLOW ...]\\n\\n" +
+        raw_output[-half:]
+    )
+    return truncated`,
+        testCases: [
+          {
+            input: 'raw_output with 1,000,000 characters',
+            expectedOutput: 'Output capped at 8000 chars with explicit truncation warning',
+            explanation: "Prevents giant tool payloads from blowing up context windows while preserving head and tail logs."
+          }
+        ]
+      }
+    }
   },
   {
-    id: "14-model-context-protocol-mcp",
-    number: "14",
+    id: "16-model-context-protocol-mcp",
+    number: "16",
     title: "Model Context Protocol (MCP) & Inter-Agent Standards",
     moduleId: "agents",
-    moduleName: "Agentic Loops & Automations",
+    moduleName: "Agentic Loops, Sandboxes & Multi-Agent Systems",
+    trackNumber: 3,
     readTime: "20 min",
+    targetRoles: ['ai-engineer', 'agent-architect', 'harness-engineer'],
     motto: "MCP is the USB-C of AI engineering: a universal open protocol connecting agents to data sources, tools, and execution environments.",
     problemStatement: "Historically, every AI platform wrote proprietary integrations for Slack, GitHub, Postgres, and Jira. When developers switched frameworks, all integrations had to be rewritten. Anthropic's Model Context Protocol (MCP) standardizes how models discover and execute tools, read resources, and apply prompt templates across vendors.",
     coreConcepts: [
@@ -308,80 +373,29 @@ agent.run("Calculate California sales tax on $200")`
       title: "Pure Python MCP JSON-RPC 2.0 Stdio Handler",
       description: "Implementing the core JSON-RPC 2.0 dispatch mechanism that underlies Model Context Protocol servers.",
       code: `import json
-import sys
 
 class SimpleMCPServer:
-    def __init__(self, name="demo-mcp-server", version="1.0.0"):
-        self.name = name
-        self.version = version
+    def __init__(self):
         self.tools = {}
 
     def register_tool(self, name, description, schema, handler):
-        self.tools[name] = {
-            "name": name,
-            "description": description,
-            "inputSchema": schema,
-            "handler": handler
-        }
+        self.tools[name] = {"name": name, "description": description, "inputSchema": schema, "handler": handler}
 
     def handle_request(self, json_str):
-        try:
-            req = json.loads(json_str)
-            req_id = req.get("id")
-            method = req.get("method")
-            params = req.get("params", {})
+        req = json.loads(json_str)
+        method = req.get("method")
+        req_id = req.get("id")
+        
+        if method == "tools/list":
+            return {"jsonrpc": "2.0", "id": req_id, "result": {"tools": list(self.tools.values())}}
+        elif method == "tools/call":
+            p = req.get("params", {})
+            res = self.tools[p["name"]]["handler"](p.get("arguments", {}))
+            return {"jsonrpc": "2.0", "id": req_id, "result": {"content": [{"type": "text", "text": str(res)}]}}
 
-            # 1. MCP Initialization
-            if method == "initialize":
-                return {
-                    "jsonrpc": "2.0",
-                    "id": req_id,
-                    "result": {
-                        "protocolVersion": "2024-11-05",
-                        "serverInfo": {"name": self.name, "version": self.version},
-                        "capabilities": {"tools": {}}
-                    }
-                }
-
-            # 2. List available tools
-            elif method == "tools/list":
-                tool_list = [
-                    {"name": t["name"], "description": t["description"], "inputSchema": t["inputSchema"]}
-                    for t in self.tools.values()
-                ]
-                return {"jsonrpc": "2.0", "id": req_id, "result": {"tools": tool_list}}
-
-            # 3. Call tool
-            elif method == "tools/call":
-                t_name = params.get("name")
-                args = params.get("arguments", {})
-                if t_name not in self.tools:
-                    return {"jsonrpc": "2.0", "id": req_id, "error": {"code": -32601, "message": "Tool not found"}}
-                result_content = self.tools[t_name]["handler"](args)
-                return {
-                    "jsonrpc": "2.0",
-                    "id": req_id,
-                    "result": {"content": [{"type": "text", "text": str(result_content)}]}
-                }
-
-            else:
-                return {"jsonrpc": "2.0", "id": req_id, "error": {"code": -32601, "message": "Method not supported"}}
-        except Exception as e:
-            return {"jsonrpc": "2.0", "id": None, "error": {"code": -32603, "message": str(e)}}
-
-# Instantiate and test
 server = SimpleMCPServer()
-server.register_tool(
-    name="get_system_time",
-    description="Returns server timestamp",
-    schema={"type": "object", "properties": {}},
-    handler=lambda args: "2026-11-13T10:00:00Z"
-)
-
-# Test 'tools/list' request
-sample_req = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/list"})
-response = server.handle_request(sample_req)
-print("MCP Server Response:\n", json.dumps(response, indent=2))`
+server.register_tool("get_time", "Returns server time", {}, lambda args: "2026-11-13T12:00:00Z")
+print(server.handle_request('{"jsonrpc": "2.0", "id": 1, "method": "tools/list"}'))`
     },
     productionPitfalls: [
       "Running untrusted third-party MCP servers without container/sandbox isolation.",
@@ -405,15 +419,72 @@ print("MCP Server Response:\n", json.dumps(response, indent=2))`
         correctIndex: 0,
         explanation: "MCP utilizes standardized JSON-RPC 2.0 messages transmitted over standard input and output (stdio) for local processes, and HTTP with Server-Sent Events (SSE) for remote servers."
       }
-    ]
+    ],
+    simulatorType: 'react-loop',
+    labs: {
+      problemA: {
+        title: "Algorithmic Lab: MCP JSON-RPC 2.0 Message Dispatcher",
+        subtitle: "Core DSA: Protocol Serialization & Error Code Formatting",
+        problemStatement: "Implement `mcp_dispatch(server_state: dict, raw_json_message: str) -> str` supporting `initialize`, `ping`, and returning proper JSON-RPC error `-32601` (Method not found) for unknown methods according to spec.",
+        starterCode: `def mcp_dispatch(server_state: dict, raw_json_message: str) -> str:
+    # TODO: Implement spec-compliant JSON-RPC 2.0 router
+    pass`,
+        solutionCode: `import json
+
+def mcp_dispatch(server_state: dict, raw_json_message: str) -> str:
+    try:
+        req = json.loads(raw_json_message)
+    except Exception:
+        return json.dumps({"jsonrpc": "2.0", "id": None, "error": {"code": -32700, "message": "Parse error"}})
+    
+    req_id = req.get("id")
+    method = req.get("method")
+    
+    if method == "initialize":
+        return json.dumps({"jsonrpc": "2.0", "id": req_id, "result": {"protocolVersion": "2024-11-05", "capabilities": {"tools": {}}}})
+    elif method == "ping":
+        return json.dumps({"jsonrpc": "2.0", "id": req_id, "result": {}})
+    else:
+        return json.dumps({"jsonrpc": "2.0", "id": req_id, "error": {"code": -32601, "message": f"Method '{method}' not found"}})`,
+        testCases: [
+          {
+            input: '{"jsonrpc": "2.0", "id": 4, "method": "unknown_cmd"}',
+            expectedOutput: 'error with code -32601 and message "Method not found"',
+            explanation: "Strict JSON-RPC 2.0 error contract compliance."
+          }
+        ]
+      },
+      problemB: {
+        title: "Production Systems Debugging: The MCP Stdout Stream Poisoning Crash",
+        subtitle: "Production Systems Bug: Print statements corrupting stdio JSON-RPC transport",
+        problemStatement: "A Python developer added `print('Connecting to DB...')` inside an MCP tool handler. Immediately, Claude Desktop / Cursor threw `JsonRpcTransportError: Unexpected non-JSON character 'C'` and disconnected. Fix the logging architecture by redirecting all debug statements to stderr.",
+        starterCode: `# Buggy print:
+# print(f"Executing tool {name}") # Corrupts stdio!`,
+        solutionCode: `import sys
+
+def debug_log(msg: str):
+    # CRITICAL: stdio transport reserves stdout exclusively for JSON-RPC 2.0 messages!
+    # All logging, diagnostics, and errors must be emitted to stderr:
+    print(f"[DEBUG] {msg}", file=sys.stderr, flush=True)`,
+        testCases: [
+          {
+            input: 'debug_log("Starting connection...")',
+            expectedOutput: 'Logged to stderr without poisoning stdout JSON stream',
+            explanation: "stdout is strictly a protocol channel in stdio MCP implementations."
+          }
+        ]
+      }
+    }
   },
   {
-    id: "15-deterministic-workflows-vs-agents",
-    number: "15",
+    id: "17-deterministic-workflows-vs-agents",
+    number: "17",
     title: "Deterministic Workflows vs. Stochastic Agents",
     moduleId: "agents",
-    moduleName: "Agentic Loops & Automations",
+    moduleName: "Agentic Loops, Sandboxes & Multi-Agent Systems",
+    trackNumber: 3,
     readTime: "18 min",
+    targetRoles: ['ai-engineer', 'agent-architect', 'fde'],
     motto: "Use code for predictability; use agents only for ambiguity. Never let an LLM decide what a Python IF statement can solve.",
     problemStatement: "The most common architectural mistake in modern AI engineering is building a fully autonomous, stochastic agent for a problem that is 90% deterministic business logic. Stochastic agents have variance, failure rates, and high latency; production automations require Directed Acyclic Graphs (DAGs) and state machines.",
     coreConcepts: [
@@ -442,46 +513,20 @@ print("MCP Server Response:\n", json.dumps(response, indent=2))`
       title: "State-Machine Directed Workflow (Deterministic Routing)",
       description: "A predictable workflow pattern combining deterministic state transitions with LLM intelligence.",
       code: `class SupportWorkflowEngine:
-    """Deterministic routing state machine with LLM intent classification."""
-    def __init__(self):
-        self.state = "TRIAGE"
-        
     def classify_intent(self, text):
-        # Simulated LLM classification call (Temperature = 0)
         t = text.lower()
-        if "bill" in t or "charge" in t or "refund" in t:
-            return "BILLING"
-        elif "bug" in t or "error" in t or "down" in t:
-            return "TECH_SUPPORT"
+        if any(w in t for w in ["bill", "charge", "refund"]): return "BILLING"
+        elif any(w in t for w in ["bug", "error", "down"]): return "TECH_SUPPORT"
         return "GENERAL"
 
-    def run(self, user_ticket):
-        print(f"Processing Ticket: '{user_ticket}'")
-        
-        # Step 1: Deterministic classification via LLM
-        intent = self.classify_intent(user_ticket)
-        print(f"[State: TRIAGE] Intent classified as: {intent}")
-        
-        # Step 2: Strict deterministic branching
-        if intent == "BILLING":
-            return self.handle_billing(user_ticket)
-        elif intent == "TECH_SUPPORT":
-            return self.handle_tech_support(user_ticket)
-        else:
-            return self.handle_general(user_ticket)
-            
-    def handle_billing(self, ticket):
-        # Deterministic API check before LLM synthesis
-        return "Routed to Billing Engine: Initiated automatic invoice lookup."
-        
-    def handle_tech_support(self, ticket):
-        return "Routed to Engineering: Triggered diagnostic system log capture."
-        
-    def handle_general(self, ticket):
-        return "Routed to FAQ Bot: Synthesizing help documentation."
+    def run(self, ticket):
+        intent = self.classify_intent(ticket)
+        if intent == "BILLING": return "Routed to Billing Engine."
+        elif intent == "TECH_SUPPORT": return "Routed to Tech Support."
+        return "Routed to FAQ."
 
 engine = SupportWorkflowEngine()
-print(engine.run("Why was my credit card charged twice yesterday?"))`
+print(engine.run("Why was my credit card charged twice?"))`
     },
     productionPitfalls: [
       "Letting an autonomous agent navigate an entire 15-step enterprise payroll workflow autonomously without check-points.",
@@ -505,15 +550,93 @@ print(engine.run("Why was my credit card charged twice yesterday?"))`
         correctIndex: 0,
         explanation: "For structured, high-stakes business processes, deterministic state machines and DAGs ensure reproducibility, auditability, and minimal failure rates compared to stochastic agent loops."
       }
-    ]
+    ],
+    simulatorType: 'react-loop',
+    labs: {
+      problemA: {
+        title: "Algorithmic Lab: DAG Topological Sort & Cycle Validator for Workflows",
+        subtitle: "Core DSA: Kahn's Algorithm & Graph Traversal",
+        problemStatement: "In a workflow builder, tasks depend on outputs of other tasks. Implement `validate_workflow_dag(tasks: dict[str, list[str]]) -> tuple[bool, list[str]]` which validates if a workflow dependency graph has cycles, returning `(True, execution_order)` or `(False, [])` if cyclic.",
+        starterCode: `def validate_workflow_dag(tasks: dict[str, list[str]]) -> tuple[bool, list[str]]:
+    # tasks: dict mapping task_id -> list of task_ids it depends on
+    pass`,
+        solutionCode: `from collections import deque
+
+def validate_workflow_dag(tasks: dict[str, list[str]]) -> tuple[bool, list[str]]:
+    # In-degree calculation
+    in_degree = {t: len(deps) for t, deps in tasks.items()}
+    # Adjacency list: dep -> list of tasks waiting for it
+    adj = {t: [] for t in tasks}
+    for t, deps in tasks.items():
+        for d in deps:
+            if d in adj: adj[d].append(t)
+            
+    q = deque([t for t, deg in in_degree.items() if deg == 0])
+    order = []
+    
+    while q:
+        curr = q.popleft()
+        order.append(curr)
+        for follower in adj.get(curr, []):
+            in_degree[follower] -= 1
+            if in_degree[follower] == 0:
+                q.append(follower)
+                
+    if len(order) == len(tasks):
+        return True, order
+    return False, []`,
+        testCases: [
+          {
+            input: '{"A": [], "B": ["A"], "C": ["B"]}',
+            expectedOutput: '(True, ["A", "B", "C"])',
+            explanation: "Valid linear DAG executed in topological order."
+          }
+        ]
+      },
+      problemB: {
+        title: "Production Systems Debugging: The Stochastic Routing Flake Bug",
+        subtitle: "Production Systems Bug: Model classifying refunds as product feedback at temperature=0.7",
+        problemStatement: "A payment routing endpoint used an LLM prompt to classify tickets. At high concurrency, 3% of angry cancellation tickets were misclassified as 'Feature Requests', causing SLA breaches. Replace the stochastic classification with few-shot calibrated logit bias or Pydantic enum validation.",
+        starterCode: `# Flaky classification:
+# resp = llm.complete("Classify ticket into: REFUND, BUG, FEATURE: " + text)`,
+        solutionCode: `from enum import Enum
+from pydantic import BaseModel
+
+class TicketCategory(str, Enum):
+    REFUND = "REFUND"
+    BUG = "BUG"
+    FEATURE = "FEATURE"
+
+class TriageResult(BaseModel):
+    category: TicketCategory
+    confidence: float
+
+# Using Structured Outputs with Temperature = 0.0 guarantees exact Enum membership:
+result = client.beta.chat.completions.parse(
+    model="gpt-4o-mini",
+    messages=[{"role": "user", "content": ticket_text}],
+    temperature=0.0,
+    response_format=TriageResult
+)`,
+        testCases: [
+          {
+            input: 'Angry cancellation ticket',
+            expectedOutput: 'Guaranteed to return category=TicketCategory.REFUND',
+            explanation: "Temperature 0 + Pydantic Enum eliminates classification variance."
+          }
+        ]
+      }
+    }
   },
   {
-    id: "16-resilient-automations-durable-execution",
-    number: "16",
+    id: "18-resilient-automations-durable-execution",
+    number: "18",
     title: "Resilient Automations & Durable Execution",
     moduleId: "agents",
-    moduleName: "Agentic Loops & Automations",
+    moduleName: "Agentic Loops, Sandboxes & Multi-Agent Systems",
+    trackNumber: 3,
     readTime: "21 min",
+    targetRoles: ['ai-engineer', 'agent-architect', 'fde'],
     motto: "A long-running agent will crash, lose network connectivity, or hit rate limits. Durable execution ensures it resumes from step 7, not step 1.",
     problemStatement: "Multi-step AI automations that take 5-30 minutes to execute (e.g., repository migration, multi-document research, compliance auditing) cannot run in-memory inside an ephemeral web request. If the container restarts or hits a 429 rate limit, the entire process dies, wasting tokens and leaving systems in inconsistent states.",
     coreConcepts: [
@@ -540,67 +663,28 @@ print(engine.run("Why was my credit card charged twice yesterday?"))`
       language: "python",
       title: "Durable Agent Checkpointing & Resume in Pure Python",
       description: "A resilient state store that persists step execution and can resume from crashes without re-running completed work.",
-      code: `import json
-
-class DurableAgentStore:
-    def __init__(self):
-        # Simulated durable database (e.g. Postgres table)
-        self.db = {}
-
-    def save_checkpoint(self, task_id, step_num, state_data):
-        self.db[task_id] = {
-            "last_completed_step": step_num,
-            "state": state_data,
-            "status": "IN_PROGRESS"
-        }
-        print(f"[STORE] Persisted checkpoint for Task {task_id} at Step {step_num}")
-
-    def load_checkpoint(self, task_id):
-        return self.db.get(task_id, {"last_completed_step": 0, "state": {}, "status": "NEW"})
-
-class DurableWorkflow:
-    def __init__(self, store, task_id):
-        self.store = store
+      code: `class DurableWorkflow:
+    def __init__(self, db_store, task_id):
+        self.db = db_store
         self.task_id = task_id
 
-    def execute_step(self, step_num, name, action_fn, current_state):
-        ckpt = self.store.load_checkpoint(self.task_id)
-        if ckpt["last_completed_step"] >= step_num:
-            print(f"[CACHE] Step {step_num} ('{name}') already completed. Reusing result.")
-            return ckpt["state"][f"step_{step_num}"]
+    def step(self, step_idx, name, fn, state):
+        ckpt = self.db.get(self.task_id, {})
+        if ckpt.get("last_step", 0) >= step_idx:
+            return ckpt["state"][f"step_{step_idx}"]
+        res = fn(state)
+        state[f"step_{step_idx}"] = res
+        self.db[self.task_id] = {"last_step": step_idx, "state": state}
+        return res
 
-        print(f"[RUNNING] Executing Step {step_num}: '{name}'...")
-        result = action_fn(current_state)
-        current_state[f"step_{step_num}"] = result
-        self.store.save_checkpoint(self.task_id, step_num, current_state)
-        return result
-
-# Example: 3-step automation
-store = DurableAgentStore()
-task_id = "job_492"
-
-def step1_fetch(state): return {"data": "Customer records fetched"}
-def step2_process(state): return {"processed": 42}
-def step3_notify(state): return "Email dispatched"
-
-# Run 1: Completes step 1 and 2, then simulates a container crash!
-wf = DurableWorkflow(store, task_id)
-state = {}
-state["step_1"] = wf.execute_step(1, "Fetch Data", step1_fetch, state)
-state["step_2"] = wf.execute_step(2, "Process Data", step2_process, state)
-print("--- [CRASH SIMULATION] Process killed by Out-Of-Memory! ---\n")
-
-# Run 2: New worker container spins up and resumes the exact same task
-resumed_wf = DurableWorkflow(store, task_id)
-resumed_ckpt = store.load_checkpoint(task_id)
-resumed_state = resumed_ckpt["state"]
-
-print(f"Resuming Task {task_id} from checkpoint...")
-resumed_state["step_1"] = resumed_wf.execute_step(1, "Fetch Data", step1_fetch, resumed_state)
-resumed_state["step_2"] = resumed_wf.execute_step(2, "Process Data", step2_process, resumed_state)
-# Only step 3 actually executes!
-resumed_state["step_3"] = resumed_wf.execute_step(3, "Notify Customer", step3_notify, resumed_state)
-print("Task successfully completed!")`
+db = {}
+wf = DurableWorkflow(db, "job_492")
+s = {}
+s["s1"] = wf.step(1, "Fetch", lambda st: "Fetched Data", s)
+s["s2"] = wf.step(2, "Process", lambda st: 42, s)
+# Simulate crash & resume:
+wf2 = DurableWorkflow(db, "job_492")
+print("Resuming Step 2:", wf2.step(2, "Process", lambda st: 999, s))`
     },
     productionPitfalls: [
       "Running multi-step agents inside single HTTP request handlers subject to 30-second gateway timeouts.",
@@ -624,6 +708,354 @@ print("Task successfully completed!")`
         correctIndex: 0,
         explanation: "If a workflow fails or times out after sending a request but before receiving confirmation, retrying the step with the same idempotency key guarantees the downstream service executes it only once."
       }
-    ]
+    ],
+    simulatorType: 'fde-economics',
+    labs: {
+      problemA: {
+        title: "Algorithmic Lab: Exponential Backoff with Full Jitter",
+        subtitle: "Core DSA: Stochastic Retry Intervals (AWS Architecture Pattern)",
+        problemStatement: "Implement `calculate_backoff_delay(attempt: int, base_delay: float = 1.0, max_delay: float = 60.0) -> float` using the standard AWS Full Jitter algorithm $V = \\text{Uniform}(0, \\min(\\text{max\\_delay}, \\text{base} \\times 2^{\\text{attempt}}))$.",
+        starterCode: `def calculate_backoff_delay(attempt: int, base_delay: float = 1.0, max_delay: float = 60.0) -> float:
+    # TODO: Implement full jitter backoff
+    pass`,
+        solutionCode: `import random
+
+def calculate_backoff_delay(attempt: int, base_delay: float = 1.0, max_delay: float = 60.0) -> float:
+    cap = min(max_delay, base_delay * (2 ** attempt))
+    return random.uniform(0, cap)`,
+        testCases: [
+          {
+            input: 'attempt=3, base=1.0, max=60.0',
+            expectedOutput: 'Random float uniformly distributed between 0 and 8.0 seconds',
+            explanation: "Prevents 'thundering herd' spikes when hundreds of parallel workers hit rate limits simultaneously."
+          }
+        ]
+      },
+      problemB: {
+        title: "Production Systems Debugging: The Duplicate Stripe Charge on Worker Timeout",
+        subtitle: "Production Systems Bug: Celery worker timeout retrying payment task without idempotency key",
+        problemStatement: "A background agent task called `stripe.Charge.create(amount=5000)`. The HTTP response hung for 35 seconds, triggering Celery's worker timeout. Celery retried the task, charging the customer $50.00 twice. Fix the payment tool with deterministic UUID idempotency keys.",
+        starterCode: `# Buggy payment tool:
+# charge = stripe.Charge.create(amount=5000, customer=cust_id)`,
+        solutionCode: `import hashlib
+
+def create_idempotent_charge(workflow_id: str, step_id: str, amount: int, customer_id: str):
+    # Derive deterministic idempotency key from workflow state:
+    idempotency_key = hashlib.sha256(f"{workflow_id}:{step_id}:{customer_id}".encode()).hexdigest()
+    return stripe.Charge.create(
+        amount=amount,
+        customer=customer_id,
+        idempotency_key=idempotency_key # Stripe guarantees exact 1 execution within 24h
+    )`,
+        testCases: [
+          {
+            input: 'Same task re-executed 3 times after worker timeout',
+            expectedOutput: 'Customer charged exactly once; subsequent calls return initial transaction response.',
+            explanation: "Idempotency keys ensure external payment gateways execute transactions exactly once."
+          }
+        ]
+      }
+    }
+  },
+  {
+    id: "19-multi-agent-orchestration-handoffs",
+    number: "19",
+    title: "Multi-Agent Orchestration & Handoffs",
+    moduleId: "agents",
+    moduleName: "Agentic Loops, Sandboxes & Multi-Agent Systems",
+    trackNumber: 3,
+    readTime: "24 min",
+    targetRoles: ['agent-architect', 'ai-engineer'],
+    motto: "A single monolithic prompt fails at complex tasks. Multi-agent systems succeed by isolating state and strictly scoping roles.",
+    problemStatement: "Giving one agent 40 tools results in confused tool selections, context window overflow, and catastrophic hallucinations. Production architectures decompose monolithic agents into specialized sub-agents (e.g. Researcher, Coder, Verifier) coordinated through Supervisor or Swarm topologies with structured handoff schemas.",
+    coreConcepts: [
+      {
+        title: "Supervisor vs. Swarm Topologies",
+        summary: "Centralized coordination versus peer-to-peer agent delegation.",
+        content: [
+          "Supervisor / Router Pattern: A central lead agent receives the user goal, decomposes it into sub-tasks, delegates to specialized sub-agents, and reviews their outputs.",
+          "Swarm / Handoff Pattern (e.g. OpenAI Swarm): Sub-agents dynamically transfer control to peer agents by returning a `transfer_to_agent_name` tool call. Each agent has its own scoped prompt and tool belt.",
+          "Context Quarantine: Sub-agents run in isolated conversation contexts. Only the finalized summary or structured artifact is passed back to the supervisor, preventing context pollution."
+        ],
+        diagram: `User Request
+  │
+  ▼
+[Supervisor Agent] (Coordinates & validates)
+  ├──► [Research Agent] (Web search & documentation tools) ──► Returns clean Markdown summary
+  ├──► [Coding Agent] (AST & file editing tools) ────────────► Returns git diff patch
+  └──► [Verifier Agent] (Test runner sandbox) ───────────────► Returns Pass/Fail test log`
+      },
+      {
+        title: "Handoff State Protocols & Schemas",
+        summary: "How state is communicated safely across agent boundaries.",
+        content: [
+          "Transfer Function Contract: `transfer_to_verifier(context_summary: str, artifact_path: str)`.",
+          "Shared Message Board / Blackboards: Agents post updates to a shared persistent board while maintaining independent working memory buffers."
+        ]
+      }
+    ],
+    codeImplementation: {
+      language: "python",
+      title: "Pure Python Swarm Handoff Pattern from Scratch",
+      description: "Implementing lightweight agent handoffs using function returns and scoped tools without external frameworks.",
+      code: `class Agent:
+    def __init__(self, name, instructions, tools):
+        self.name = name
+        self.instructions = instructions
+        self.tools = tools
+
+def transfer_to_billing():
+    return billing_agent
+
+def transfer_to_tech():
+    return tech_agent
+
+triage_agent = Agent("Triage", "Classify customer intent", {"to_billing": transfer_to_billing, "to_tech": transfer_to_tech})
+billing_agent = Agent("Billing", "Handle refunds and invoices", {"refund": lambda: "Refund processed"})
+tech_agent = Agent("TechSupport", "Diagnose server errors", {"check_logs": lambda: "Logs healthy"})
+
+def run_swarm(current_agent, user_message):
+    print(f"[{current_agent.name}] received: '{user_message}'")
+    if "refund" in user_message.lower():
+        # Agent decides to hand off to billing
+        next_agent = current_agent.tools["to_billing"]()
+        print(f"-> Handoff from {current_agent.name} to {next_agent.name}")
+        return next_agent, next_agent.tools["refund"]()
+    return current_agent, "Handled by triage."
+
+final_agent, result = run_swarm(triage_agent, "I need a refund on my last invoice")
+print("Outcome:", result)`
+    },
+    productionPitfalls: [
+      "Creating cyclic handoff loops between Agent A and Agent B (e.g. Researcher asks Coder, Coder asks Researcher indefinitely).",
+      "Passing entire bloated conversation histories during handoffs, blowing up the child agent's context window.",
+      "Failing to designate a single agent with final authority to terminate the interaction."
+    ],
+    keyTakeaways: [
+      "Use Multi-Agent patterns to quarantine context and keep tool sets small and focused (< 8 tools per agent).",
+      "Supervisor topologies provide strong auditability; Swarm handoffs provide agile conversational transitions.",
+      "Always enforce max handoff depth caps to prevent ping-pong loops."
+    ],
+    quiz: [
+      {
+        question: "What is the primary advantage of isolating context between specialized sub-agents in a multi-agent system?",
+        options: [
+          "It prevents context dilution and hallucinations by ensuring each sub-agent only sees information relevant to its specific domain",
+          "It reduces network bandwidth to zero",
+          "It allows running models without internet access",
+          "It converts all prompts into Python code"
+        ],
+        correctIndex: 0,
+        explanation: "By keeping sub-agent contexts quarantined, agents are not distracted by irrelevant intermediate tool outputs or instructions from other domains."
+      }
+    ],
+    simulatorType: 'react-loop',
+    labs: {
+      problemA: {
+        title: "Algorithmic Lab: Multi-Agent Handoff Depth & Loop Guard",
+        subtitle: "Core DSA: Finite State Machine & Maximum Recursion Depth",
+        problemStatement: "Implement `execute_handoff_chain(start_agent: str, transition_table: dict[str, str], max_depth: int = 4) -> tuple[list[str], bool]` that executes agent transitions, detects any repetitive cycles, and terminates cleanly when reaching a terminal state or when `max_depth` is exceeded.",
+        starterCode: `def execute_handoff_chain(start: str, transitions: dict[str, str], max_depth: int = 4) -> tuple[list[str], bool]:
+    # TODO: Track chain and detect loops
+    pass`,
+        solutionCode: `def execute_handoff_chain(start: str, transitions: dict[str, str], max_depth: int = 4) -> tuple[list[str], bool]:
+    chain = [start]
+    curr = start
+    for _ in range(max_depth):
+        nxt = transitions.get(curr)
+        if not nxt:
+            return chain, True # Reached terminal agent successfully
+        if nxt in chain:
+            chain.append(nxt)
+            return chain, False # Cycle detected!
+        chain.append(nxt)
+        curr = nxt
+    return chain, False # Max depth exceeded`,
+        testCases: [
+          {
+            input: 'start="Triage", transitions={"Triage": "Billing", "Billing": "Triage"}',
+            expectedOutput: '(["Triage", "Billing", "Triage"], False)',
+            explanation: "Cycle detected when Billing transitions back to Triage."
+          }
+        ]
+      },
+      problemB: {
+        title: "Production Systems Debugging: The Sub-Agent Context Leaking Outage",
+        subtitle: "Production Systems Bug: Child agent reading parent agent's system credentials",
+        problemStatement: "A parent supervisor agent held administrative database connection strings in its system prompt. When spawning a child web scraper agent, it naively copied `messages=parent.messages`. The web scraper encountered an indirect prompt injection that extracted the parent's system credentials. Architect the sanitized handoff payload.",
+        starterCode: `# Buggy inheritance:
+# child_agent.run(messages=parent_agent.messages)`,
+        solutionCode: `def spawn_isolated_child_agent(child_type: str, task_brief: str) -> dict:
+    # Strictly isolate child system prompt and context:
+    child_system_prompts = {
+        "scraper": "You are a web scraper. You have access only to fetch_url. Output text only."
+    }
+    # Pass ONLY the task brief, NEVER the parent message history or system prompt!
+    return {
+        "system": child_system_prompts[child_type],
+        "messages": [{"role": "user", "content": task_brief}]
+    }`,
+        testCases: [
+          {
+            input: 'Child agent inspected by prompt injection attack',
+            expectedOutput: 'Zero parent secrets or connection strings present in child context',
+            explanation: "Context isolation enforces the principle of least privilege across sub-agents."
+          }
+        ]
+      }
+    }
+  },
+  {
+    id: "20-code-execution-sandboxes-computer-use",
+    number: "20",
+    title: "Code Execution Sandboxes & Computer Use",
+    moduleId: "agents",
+    moduleName: "Agentic Loops, Sandboxes & Multi-Agent Systems",
+    trackNumber: 3,
+    readTime: "25 min",
+    targetRoles: ['agent-architect', 'harness-engineer', 'ai-engineer'],
+    motto: "Never trust an agent with your host machine. True autonomy requires ephemeral, network-isolated microVMs.",
+    problemStatement: "Autonomous coding agents and GUI computer-use models (e.g. Anthropic Computer Use) generate arbitrary bash, Python, and OS mouse/keyboard actions. Running these actions on the host workstation risks accidental filesystem destruction, fork-bombs, cryptocurrency mining, and credential theft. Production architectures demand microVM sandboxing (E2B, gVisor, Firecracker).",
+    coreConcepts: [
+      {
+        title: "The Sandbox Isolation Spectrum",
+        summary: "Comparing isolation mechanisms from OS processes to microVMs.",
+        content: [
+          "Local Subprocess / chroot: Zero security. Trivial to escape via symlinks, kill parent processes, or read environment variables.",
+          "Docker / Container Isolation: Good for development, but shares the Linux kernel with the host. Vulnerable to kernel privilege escalation CVEs.",
+          "gVisor / Kata Containers: Intercepts and virtualizes syscalls in userspace, providing a robust security boundary with fast startup (< 100ms).",
+          "MicroVMs (Firecracker / E2B): Dedicated guest kernels with hardware-assisted virtualization. Complete hypervisor-level isolation. Cold starts in ~150ms."
+        ]
+      },
+      {
+        title: "Computer Use & Headless Browser Instrumentation",
+        summary: "Enabling agents to interact with graphical interfaces and live web pages.",
+        content: [
+          "CDP (Chrome DevTools Protocol) / Playwright: Controlling headless Chromium instances with accessibility tree snapshots rather than raw visual screenshots.",
+          "Accessibility Trees (a11y): Converting DOM nodes into structured interactive coordinates (`click(node_id=42)`), slashing token costs by 80% compared to pixel streaming.",
+          "Virtual Framebuffers (Xvfb): Running virtual display servers inside headless containers to capture screenshots and dispatch mouse clicks (`xdotool`)."
+        ]
+      }
+    ],
+    codeImplementation: {
+      language: "python",
+      title: "Ephemeral Container Execution Wrapper with Resource Ceilings in Python",
+      description: "Running untrusted agent code with memory limits, CPU quotas, and timeout enforcement.",
+      code: `import subprocess, tempfile, os
+
+def execute_untrusted_python(code_snippet: str, timeout_sec: int = 5, max_mem_mb: int = 128):
+    """
+    Simulates sandboxed execution with strict resource constraints and timeouts.
+    """
+    with tempfile.NamedTemporaryFile(mode='w', suffix='.py', delete=False) as f:
+        f.write(code_snippet)
+        temp_path = f.name
+        
+    try:
+        # In production, wrapped via: docker run --rm -m 128m --cpus=0.5 --network=none
+        cmd = ["python", temp_path]
+        res = subprocess.run(
+            cmd,
+            capture_output=True,
+            text=True,
+            timeout=timeout_sec
+        )
+        return {
+            "stdout": res.stdout,
+            "stderr": res.stderr,
+            "exit_code": res.returncode,
+            "status": "COMPLETED"
+        }
+    except subprocess.TimeoutExpired:
+        return {"error": "Execution timed out (CPU/Infinite Loop ceiling hit)", "status": "TIMEOUT"}
+    finally:
+        if os.path.exists(temp_path):
+            os.remove(temp_path)
+
+# Test safe execution
+print(execute_untrusted_python("print('Hello from sandbox!')"))
+# Test infinite loop termination
+print(execute_untrusted_python("while True: pass", timeout_sec=1))`
+    },
+    productionPitfalls: [
+      "Granting unrestricted outbound internet access to execution sandboxes, allowing data exfiltration via curl/DNS.",
+      "Mounting the host project root as a read-write volume into the sandbox, allowing agents to corrupt `.git` state.",
+      "Not cleaning up stale microVM containers, causing disk space exhaustion on host nodes."
+    ],
+    keyTakeaways: [
+      "Never execute agent-generated code directly on host OS runtimes.",
+      "Use microVMs (E2B / Firecracker) or gVisor sandboxes with air-gapped network egress.",
+      "For browser automation, prioritize accessibility trees over raw pixel coordinate clicks to optimize latency and token budgets."
+    ],
+    quiz: [
+      {
+        question: "Why are microVMs (like AWS Firecracker or E2B) preferred over traditional Docker containers for running untrusted agent-generated code?",
+        options: [
+          "MicroVMs run a dedicated isolated guest kernel, preventing host kernel exploit escapes",
+          "MicroVMs make Python run 100x faster",
+          "Docker containers do not support Python",
+          "MicroVMs do not require RAM"
+        ],
+        correctIndex: 0,
+        explanation: "Traditional Docker containers share the host operating system's kernel. A malicious script with a kernel exploit can escape the container. MicroVMs provide true hypervisor-level virtualization with independent guest kernels."
+      }
+    ],
+    simulatorType: 'react-loop',
+    labs: {
+      problemA: {
+        title: "Algorithmic Lab: Playwright Accessibility Tree Action Pruner",
+        subtitle: "Core DSA: Tree Pruning & Interactive Node Extraction",
+        problemStatement: "A full HTML DOM accessibility tree contains 5,000 nodes. Implement `prune_a11y_tree(node: dict) -> dict | None` that recursively prunes all static, non-interactive layout nodes (e.g. empty divs, non-clickable spans) and retains only nodes with roles: `button`, `link`, `input`, `textarea`, or with direct text children.",
+        starterCode: `def prune_a11y_tree(node: dict) -> dict | None:
+    # node: {"role": str, "name": str, "children": list[dict]}
+    pass`,
+        solutionCode: `def prune_a11y_tree(node: dict) -> dict | None:
+    INTERACTIVE_ROLES = {"button", "link", "input", "textarea", "checkbox", "menuitem"}
+    pruned_children = []
+    for c in node.get("children", []):
+        res = prune_a11y_tree(c)
+        if res: pruned_children.append(res)
+        
+    is_interactive = node.get("role") in INTERACTIVE_ROLES
+    has_text = bool(node.get("name", "").strip())
+    
+    if is_interactive or has_text or pruned_children:
+        return {
+            "role": node.get("role"),
+            "name": node.get("name", ""),
+            "children": pruned_children
+        }
+    return None`,
+        testCases: [
+          {
+            input: 'Tree with 10 nested layout divs containing 1 button',
+            expectedOutput: 'Pruned tree preserving only the button node and direct path',
+            explanation: "Reduces token consumption by >80% when passing UI state to vision/text LLMs."
+          }
+        ]
+      },
+      problemB: {
+        title: "Production Systems Debugging: The Fork-Bomb Sandbox Freeze Outage",
+        subtitle: "Production Systems Bug: Agent executing recursive subprocesses exhausting host PID table",
+        problemStatement: "An agent generated Python code containing `import os; [os.fork() for _ in range(100)]`. The host system froze, killing all active services on the server. Configure Linux cgroups to enforce strict `pids.max` and memory ceilings.",
+        starterCode: `# VULNERABLE HOST RUNNER:
+# subprocess.run(["python", script_path])`,
+        solutionCode: `# Secure Linux Cgroup / Container Configuration:
+# docker run --rm \\
+#   --pids-limit 64 \\             # Prevents fork bombs from exhausting PID table
+#   --memory 256m \\               # Strict memory limit
+#   --cpus 1.0 \\                  # CPU throttle
+#   --network none \\              # Complete network isolation
+#   --read-only \\                 # Read-only root filesystem
+#   --tmpfs /tmp:rw,noexec,nosuid  # Ephemeral /tmp directory with no execution flags`,
+        testCases: [
+          {
+            input: 'Fork-bomb script executed inside container with --pids-limit 64',
+            expectedOutput: 'Script terminated with BlockingIOError / Resource temporarily unavailable; host unaffected',
+            explanation: "Kernel cgroup limits guarantee the host operating system remains stable."
+          }
+        ]
+      }
+    }
   }
 ];

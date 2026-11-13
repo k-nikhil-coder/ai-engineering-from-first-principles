@@ -1458,3 +1458,841 @@ input[type="range"] {
     font-size: 2rem;
   }
 }
+
+/* =========================================================================
+   PHASE 2 & PHASE 3: 4-TAB CHAPTER VIEW, LABS, LECTURES, & ROLE TRACK STYLES
+   ========================================================================= */
+
+/* Role Badges */
+.chapter-role-tag {
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-subtle);
+}
+
+.chapter-role-tag.role-ai-engineer {
+  color: var(--accent-emerald);
+  border-color: rgba(16, 185, 129, 0.3);
+  background-color: rgba(16, 185, 129, 0.08);
+}
+
+.chapter-role-tag.role-agent-architect {
+  color: var(--accent-purple);
+  border-color: rgba(192, 132, 252, 0.3);
+  background-color: rgba(192, 132, 252, 0.08);
+}
+
+.chapter-role-tag.role-harness-engineer {
+  color: var(--accent-blue);
+  border-color: rgba(56, 189, 248, 0.3);
+  background-color: rgba(56, 189, 248, 0.08);
+}
+
+.chapter-role-tag.role-fde {
+  color: var(--accent-amber);
+  border-color: rgba(251, 191, 36, 0.3);
+  background-color: rgba(251, 191, 36, 0.08);
+}
+
+/* 4-Tab Navigation Bar */
+.chapter-tabs-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 2rem;
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 0.75rem;
+}
+
+.chapter-tab-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  font-size: 0.88rem;
+  font-weight: 600;
+  border-radius: 8px;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.chapter-tab-btn:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+  border-color: var(--border-focus);
+}
+
+.chapter-tab-btn.active {
+  background-color: var(--bg-tertiary);
+  color: var(--accent-emerald);
+  border-color: var(--accent-emerald);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.12);
+}
+
+.tab-counter-badge {
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  background-color: var(--bg-hover);
+  padding: 0.15rem 0.45rem;
+  border-radius: 10px;
+  color: var(--text-primary);
+}
+
+.tab-pill-badge {
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  background-color: rgba(56, 189, 248, 0.15);
+  color: var(--accent-blue);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+
+.tab-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background-color: var(--accent-emerald);
+}
+
+/* Tab Banner */
+.tab-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.75rem;
+}
+
+.tab-banner h3 {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--text-primary);
+}
+
+.tab-banner p {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+/* Curated Lectures Section */
+.lectures-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.lecture-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: var(--card-shadow);
+  transition: border-color 0.2s ease;
+}
+
+.lecture-card.watched {
+  border-color: rgba(16, 185, 129, 0.4);
+}
+
+.lecture-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.lecture-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.lecture-speaker {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--accent-emerald);
+  background-color: rgba(16, 185, 129, 0.1);
+  padding: 0.2rem 0.6rem;
+  border-radius: 4px;
+}
+
+.lecture-duration {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+}
+
+.lecture-watch-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: none;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  padding: 0.3rem 0.65rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.lecture-watch-toggle:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.lecture-watch-toggle.active {
+  border-color: rgba(16, 185, 129, 0.4);
+  color: var(--accent-emerald);
+}
+
+.lecture-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.85rem;
+  color: var(--text-primary);
+}
+
+.lecture-actions-row {
+  margin-bottom: 1.25rem;
+}
+
+.btn-lecture-watch {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background-color: #dc2626;
+  color: #ffffff;
+  padding: 0.55rem 1rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 0.18s ease;
+}
+
+.btn-lecture-watch:hover {
+  background-color: #b91c1c;
+  color: #ffffff;
+}
+
+.lecture-takeaways-box {
+  background-color: var(--bg-tertiary);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+}
+
+.takeaways-header {
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 0.75rem;
+  letter-spacing: 0.05em;
+}
+
+.lecture-takeaway-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.takeaway-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.takeaway-timestamp {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  background-color: var(--bg-secondary);
+  color: var(--accent-blue);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.takeaway-text {
+  color: var(--text-secondary);
+}
+
+.lecture-fallback-card {
+  text-align: center;
+  padding: 3rem 2rem;
+  background-color: var(--bg-secondary);
+  border: 1px dashed var(--border-subtle);
+  border-radius: 10px;
+}
+
+/* Embedded Simulator in Tab */
+.embedded-simulator-wrapper {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 1.5rem;
+}
+
+/* Problems & Build Labs Section */
+.labs-container {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.lab-card {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 1.5rem;
+  box-shadow: var(--card-shadow);
+}
+
+.lab-card.problem-a {
+  border-left: 4px solid var(--accent-emerald);
+}
+
+.lab-card.problem-b {
+  border-left: 4px solid var(--accent-amber);
+}
+
+.lab-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.lab-badge {
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 0.2rem 0.55rem;
+  border-radius: 4px;
+}
+
+.lab-badge.algo {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: var(--accent-emerald);
+}
+
+.lab-badge.debug {
+  background-color: rgba(251, 191, 36, 0.15);
+  color: var(--accent-amber);
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.status-badge {
+  font-size: 0.75rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-family: var(--font-mono);
+}
+
+.status-badge.solved {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: var(--accent-emerald);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.status-badge.unsolved {
+  background-color: var(--bg-tertiary);
+  color: var(--text-muted);
+}
+
+.btn-solve-toggle {
+  background: none;
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.btn-solve-toggle:hover {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.btn-solve-toggle.active {
+  border-color: rgba(16, 185, 129, 0.5);
+  color: var(--accent-emerald);
+  background-color: rgba(16, 185, 129, 0.08);
+}
+
+.lab-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 0.25rem;
+  color: var(--text-primary);
+}
+
+.lab-subtitle {
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+  margin-bottom: 1.25rem;
+}
+
+.lab-statement {
+  background-color: var(--bg-tertiary);
+  border-radius: 8px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.lab-statement h4,
+.lab-constraints h4,
+.lab-testcases h4 {
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  letter-spacing: 0.05em;
+}
+
+.lab-statement p {
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--text-primary);
+}
+
+.lab-constraints {
+  margin-bottom: 1.25rem;
+}
+
+.lab-constraints ul {
+  list-style: disc;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  font-size: 0.88rem;
+  color: var(--text-secondary);
+}
+
+.lab-testcases {
+  margin-bottom: 1.25rem;
+}
+
+.testcases-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.testcase-item {
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 6px;
+  padding: 0.65rem 0.85rem;
+  font-size: 0.82rem;
+}
+
+.tc-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin-bottom: 0.2rem;
+}
+
+.tc-label {
+  font-weight: 700;
+  color: var(--text-muted);
+  width: 70px;
+  flex-shrink: 0;
+}
+
+.tc-row code {
+  font-family: var(--font-mono);
+  color: var(--accent-emerald);
+  background-color: var(--bg-primary);
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  word-break: break-all;
+}
+
+.tc-explanation {
+  font-size: 0.78rem;
+  color: var(--text-muted);
+  margin-top: 0.25rem;
+  font-style: italic;
+}
+
+.lab-code-section {
+  margin-bottom: 1.25rem;
+}
+
+.lab-code-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background-color: var(--bg-tertiary);
+  padding: 0.5rem 0.85rem;
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+  font-size: 0.8rem;
+  font-family: var(--font-mono);
+  font-weight: 600;
+  border: 1px solid var(--border-subtle);
+  border-bottom: none;
+}
+
+.lab-code-header.buggy {
+  background-color: rgba(239, 68, 68, 0.08);
+}
+
+.lab-code-header.fixed {
+  background-color: rgba(16, 185, 129, 0.08);
+}
+
+.copy-btn.sm {
+  padding: 0.2rem 0.45rem;
+  font-size: 0.72rem;
+}
+
+.lab-pre {
+  margin: 0;
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+  max-height: 380px;
+  overflow-y: auto;
+}
+
+.buggy-pre {
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.solution-pre {
+  border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.solution-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.solution-toggle-btn:hover {
+  background-color: var(--bg-hover);
+}
+
+.solution-drawer {
+  margin-top: 0.75rem;
+}
+
+/* Role Filter Bar Component */
+.role-filter-container {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.role-filter-container.compact {
+  padding: 0.75rem 1rem;
+  margin: 0.75rem 0;
+}
+
+.role-filter-header {
+  margin-bottom: 0.75rem;
+}
+
+.role-filter-title {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+}
+
+.role-pills-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.role-pill-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.55rem 0.85rem;
+  border-radius: 20px;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.role-pill-btn:hover {
+  background-color: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.role-pill-btn.active {
+  background-color: var(--bg-primary);
+  border-color: var(--accent-emerald);
+  color: var(--accent-emerald);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.15);
+}
+
+.role-pill-icon {
+  display: flex;
+  align-items: center;
+}
+
+.role-pill-count {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  background-color: var(--bg-secondary);
+  padding: 0.1rem 0.4rem;
+  border-radius: 10px;
+  opacity: 0.9;
+}
+
+/* Sidebar Role Selector & Mini Stats */
+.sidebar-role-selector {
+  padding: 0.65rem 0;
+  border-bottom: 1px solid var(--border-subtle);
+  margin-bottom: 0.75rem;
+}
+
+.sidebar-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+  letter-spacing: 0.05em;
+}
+
+.role-select-dropdown {
+  width: 100%;
+  padding: 0.45rem 0.65rem;
+  border-radius: 6px;
+  background-color: var(--bg-tertiary);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  outline: none;
+  cursor: pointer;
+}
+
+.role-select-dropdown:focus {
+  border-color: var(--border-focus);
+}
+
+.mini-stats-grid {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 0.65rem;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.mini-stat {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.mini-stat strong {
+  color: var(--text-primary);
+  font-family: var(--font-mono);
+}
+
+.chapter-link-badges {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.badge-mini-solved {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  background-color: rgba(16, 185, 129, 0.15);
+  color: var(--accent-emerald);
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+}
+
+/* Overview Roadmap Enhancements */
+.curriculum-tracks-banner {
+  background-color: var(--bg-secondary);
+  border: 1px solid var(--border-subtle);
+  border-radius: 8px;
+  padding: 0.85rem 1.25rem;
+  margin: 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tracks-banner-title {
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+}
+
+.tracks-pills-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.track-tag {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  background-color: var(--bg-tertiary);
+  color: var(--accent-blue);
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  border: 1px solid var(--border-subtle);
+}
+
+.curriculum-header-row {
+  margin-bottom: 1.25rem;
+}
+
+.section-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-top: 0.25rem;
+}
+
+.module-card-metrics {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.metric-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.metric-badge.read {
+  color: var(--accent-emerald);
+}
+
+.metric-badge.watch {
+  color: var(--accent-purple);
+}
+
+.metric-badge.solve {
+  color: var(--accent-amber);
+}
+
+.chapter-item-left {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chapter-item-right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.chapter-item-tags {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.mini-role-pill {
+  font-size: 0.65rem;
+  font-family: var(--font-mono);
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  background-color: var(--bg-tertiary);
+  color: var(--text-muted);
+}
+
+.mini-role-pill.mini-role-ai-engineer {
+  color: var(--accent-emerald);
+}
+
+.mini-role-pill.mini-role-agent-architect {
+  color: var(--accent-purple);
+}
+
+.mini-role-pill.mini-role-harness-engineer {
+  color: var(--accent-blue);
+}
+
+.mini-role-pill.mini-role-fde {
+  color: var(--accent-amber);
+}
+
+.status-indicator-lab {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.68rem;
+  font-family: var(--font-mono);
+  color: var(--accent-amber);
+  background-color: rgba(251, 191, 36, 0.1);
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+}
