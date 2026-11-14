@@ -1,5 +1,19 @@
 # AI Engineering & Applied AI from First Principles 🧠⚡
 
+<div align="center">
+
+**[🌐 Live Site](https://ai-engineering-platform-dun.vercel.app/) · [💻 GitHub](https://github.com/k-nikhil-coder/ai-engineering-from-first-principles)**
+
+[![Live Site](https://img.shields.io/badge/Live%20Site-ai--engineering--platform-brightgreen?style=for-the-badge&logo=vercel)](https://ai-engineering-platform-dun.vercel.app/)
+[![GitHub](https://img.shields.io/badge/GitHub-k--nikhil--coder-black?style=for-the-badge&logo=github)](https://github.com/k-nikhil-coder/ai-engineering-from-first-principles)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue?style=for-the-badge)](LICENSE)
+
+*36 chapters · 72 labs · 7 interactive simulators · 100% free & open source*
+
+</div>
+
+---
+
 > Inspired directly by [Backend from First Principles](https://backend-from-first-principle.vercel.app/), this is an open-source, comprehensive **36-chapter interactive engineering curriculum and production platform** that unifies theoretical first principles with the 4 core industry tracks:
 > 1. **AI Engineer** (`roadmap.sh/ai-engineer`)
 > 2. **AI Agents & Architect** (`roadmap.sh/ai-agents`)
@@ -35,13 +49,15 @@ Visit `http://localhost:5173/` in your browser.
 
 ---
 
-## 📦 One-Click Vercel Deployment
+## 📦 Deployment
 
-Deploy this documentation hub and interactive simulator to Vercel in seconds with zero configuration:
+**Live at:** [https://ai-engineering-platform-dun.vercel.app/](https://ai-engineering-platform-dun.vercel.app/)
+
+Deploy your own copy to Vercel in one click — zero configuration needed:
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2Fk-nikhil-coder%2Fai-engineering-from-first-principles)
 
-Or deploy via terminal:
+Or via terminal:
 
 ```bash
 npx vercel
