@@ -12,63 +12,22 @@
   --font-serif: 'Newsreader', "Iowan Old Style", Charter, Georgia, "Times New Roman", serif;
   --font-mono: 'JetBrains Mono', "SF Mono", Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 
-  /* Anthropic Claude Dark Palette (Warm Obsidian & Amber/Terracotta) */
-  --bg-primary: #121110;
-  --bg-secondary: #181716;
-  --bg-tertiary: #22201d;
-  --bg-hover: #2b2825;
-  --bg-elevated: #282522;
-  
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --border-hover: rgba(255, 255, 255, 0.16);
-  --border-focus: #d97757;
-  
-  --text-primary: #f5efe8;
-  --text-secondary: #a39a8e;
-  --text-muted: #6e665d;
-  
-  /* Claude & Apple Accents */
-  --accent-clay: #d97757;             /* Claude signature terracotta */
-  --accent-clay-subtle: rgba(217, 119, 87, 0.12);
-  --accent-emerald: #30a46c;          /* Sage / Emerald */
-  --accent-emerald-subtle: rgba(48, 164, 108, 0.12);
-  --accent-amber: #e59344;           /* Warm Amber */
-  --accent-amber-subtle: rgba(229, 147, 68, 0.12);
-  --accent-blue: #2997ff;            /* Apple Signature Blue */
-  --accent-blue-subtle: rgba(41, 151, 255, 0.12);
-  --accent-purple: #a87ffb;          /* Iris / Violet */
-  --accent-purple-subtle: rgba(168, 127, 251, 0.12);
-  --accent-rose: #f06a6a;            /* Coral Red */
-  --accent-rose-subtle: rgba(240, 106, 106, 0.12);
-  
-  --code-bg: #151413;
-  --glass-bg: rgba(24, 23, 22, 0.82);
-  --glass-header: rgba(18, 17, 16, 0.85);
-  
-  /* Apple Multi-layer Shadows & Inner Highlights */
-  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.28);
-  --card-shadow-hover: 0 12px 36px rgba(0, 0, 0, 0.42);
-  --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.07);
-  --pill-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  --ease-apple: cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-[data-theme="light"] {
-  /* Anthropic Claude Light Palette (Warm Paper / Cream / Espresso) */
+  /* ── DEFAULT: Anthropic Claude Light Palette (Warm Paper / Cream / Espresso) ── */
   --bg-primary: #faf8f5;             /* Claude warm ivory parchment */
   --bg-secondary: #ffffff;
   --bg-tertiary: #f2eee8;
   --bg-hover: #eae3da;
   --bg-elevated: #ffffff;
-  
+
   --border-subtle: rgba(0, 0, 0, 0.08);
   --border-hover: rgba(0, 0, 0, 0.16);
   --border-focus: #c86545;
-  
+
   --text-primary: #1f1c19;            /* Deep espresso charcoal */
   --text-secondary: #5e564d;
   --text-muted: #8c8275;
-  
+
+  /* Claude & Apple Accents (light-calibrated) */
   --accent-clay: #c86545;
   --accent-clay-subtle: rgba(200, 101, 69, 0.1);
   --accent-emerald: #228659;
@@ -81,15 +40,56 @@
   --accent-purple-subtle: rgba(134, 82, 204, 0.1);
   --accent-rose: #d63d3d;
   --accent-rose-subtle: rgba(214, 61, 61, 0.1);
-  
+
   --code-bg: #f5f2ec;
   --glass-bg: rgba(255, 255, 255, 0.85);
-  --glass-header: rgba(250, 248, 245, 0.88);
-  
-  --card-shadow: 0 4px 20px rgba(30, 24, 16, 0.04);
-  --card-shadow-hover: 0 12px 32px rgba(30, 24, 16, 0.08);
+  --glass-header: rgba(250, 248, 245, 0.92);
+
+  --card-shadow: 0 4px 20px rgba(30, 24, 16, 0.06);
+  --card-shadow-hover: 0 12px 32px rgba(30, 24, 16, 0.10);
   --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.95);
   --pill-shadow: 0 2px 6px rgba(30, 24, 16, 0.06);
+  --ease-apple: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* ── OPTIONAL DARK MODE ── */
+[data-theme="dark"] {
+  /* Anthropic Claude Dark Palette (Warm Obsidian & Amber/Terracotta) */
+  --bg-primary: #121110;
+  --bg-secondary: #181716;
+  --bg-tertiary: #22201d;
+  --bg-hover: #2b2825;
+  --bg-elevated: #282522;
+
+  --border-subtle: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(255, 255, 255, 0.16);
+  --border-focus: #d97757;
+
+  --text-primary: #f5efe8;
+  --text-secondary: #a39a8e;
+  --text-muted: #6e665d;
+
+  --accent-clay: #d97757;             /* Claude signature terracotta */
+  --accent-clay-subtle: rgba(217, 119, 87, 0.12);
+  --accent-emerald: #30a46c;
+  --accent-emerald-subtle: rgba(48, 164, 108, 0.12);
+  --accent-amber: #e59344;
+  --accent-amber-subtle: rgba(229, 147, 68, 0.12);
+  --accent-blue: #2997ff;            /* Apple Signature Blue */
+  --accent-blue-subtle: rgba(41, 151, 255, 0.12);
+  --accent-purple: #a87ffb;
+  --accent-purple-subtle: rgba(168, 127, 251, 0.12);
+  --accent-rose: #f06a6a;
+  --accent-rose-subtle: rgba(240, 106, 106, 0.12);
+
+  --code-bg: #151413;
+  --glass-bg: rgba(24, 23, 22, 0.82);
+  --glass-header: rgba(18, 17, 16, 0.88);
+
+  --card-shadow: 0 4px 20px rgba(0, 0, 0, 0.28);
+  --card-shadow-hover: 0 12px 36px rgba(0, 0, 0, 0.42);
+  --inner-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.07);
+  --pill-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 /* Base Reset & Core Setup */
@@ -3295,5 +3295,405 @@ input[type="range"]::-webkit-slider-thumb:hover {
   }
   .mini-progress-bars-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================================
+   MOBILE BOTTOM NAVIGATION BAR (iOS-style tab bar, ≤768px)
+   ========================================================================= */
+.mobile-bottom-nav {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .mobile-bottom-nav {
+    display: flex;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 60px;
+    background-color: var(--glass-header);
+    backdrop-filter: blur(20px) saturate(180%);
+    -webkit-backdrop-filter: blur(20px) saturate(180%);
+    border-top: 1px solid var(--border-subtle);
+    z-index: 60;
+    justify-content: space-around;
+    align-items: center;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    box-shadow: 0 -1px 0 var(--border-subtle);
+  }
+}
+
+.mobile-nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex: 1;
+  padding: 0.4rem 0.5rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+.mobile-nav-btn:hover,
+.mobile-nav-btn.active {
+  color: var(--accent-clay);
+}
+.mobile-nav-btn.active svg {
+  stroke-width: 2.5;
+}
+
+/* =========================================================================
+   FULL RESPONSIVE SYSTEM
+   ========================================================================= */
+
+/* ── 1200px: Comfortable desktop shrink ── */
+@media (max-width: 1200px) {
+  .app-sidebar {
+    width: 288px;
+  }
+  .app-content-area {
+    padding: 2.5rem 2.5rem;
+  }
+}
+
+/* ── 1024px: Tablet landscape ── */
+@media (max-width: 1024px) {
+  .app-content-area {
+    padding: 2rem 1.75rem;
+  }
+  .hero-title {
+    font-size: 2.4rem;
+  }
+  .chapter-title {
+    font-size: 2.1rem;
+  }
+  .tool-grid {
+    grid-template-columns: 1fr;
+  }
+  .header-center {
+    max-width: 320px;
+    margin: 0 1rem;
+  }
+}
+
+/* ── 900px: Sidebar goes overlay ── */
+@media (max-width: 900px) {
+  .site-header {
+    padding: 0 1.25rem;
+  }
+  .menu-btn {
+    display: block;
+  }
+
+  .app-sidebar {
+    position: fixed;
+    top: 62px;
+    bottom: 0;
+    left: -340px;
+    transition: left 0.28s var(--ease-apple);
+    z-index: 40;
+    width: 300px;
+  }
+  .app-sidebar.open {
+    left: 0;
+    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.14);
+  }
+
+  .sidebar-backdrop {
+    position: fixed;
+    inset: 0;
+    top: 62px;
+    background-color: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(3px);
+    z-index: 35;
+  }
+
+  .sidebar-close-btn {
+    display: block;
+  }
+
+  .app-content-area {
+    padding: 1.75rem 1.5rem;
+  }
+
+  .hero-title {
+    font-size: 2.2rem;
+  }
+}
+
+/* ── 768px: Tablet portrait — mobile nav bar enters ── */
+@media (max-width: 768px) {
+  .app-main-container {
+    padding-bottom: 60px; /* clear mobile nav bar */
+  }
+
+  .app-content-area {
+    padding: 1.5rem 1.25rem;
+  }
+
+  /* Collapse search bar to icon only */
+  .header-center .search-trigger-btn .search-placeholder,
+  .header-center .search-trigger-btn .search-kbd {
+    display: none;
+  }
+  .header-center {
+    max-width: 44px;
+    margin: 0 0.5rem;
+    flex: 0 0 auto;
+  }
+  .search-trigger-btn {
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    justify-content: center;
+    border-radius: 10px;
+  }
+
+  .hero-title {
+    font-size: 2rem;
+  }
+  .hero-subtitle {
+    font-size: 1rem;
+  }
+  .chapter-title {
+    font-size: 1.9rem;
+  }
+
+  /* Stats grid: 2 columns on tablet */
+  .overview-stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Role pills wrap cleanly */
+  .role-pills-row {
+    gap: 0.4rem;
+  }
+
+  /* Chapter view TOC pill bar can scroll */
+  .chapter-toc-bar {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+  .chapter-toc-bar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Module cards: tighter padding */
+  .module-card {
+    padding: 1.35rem 1.25rem;
+  }
+
+  /* Tab nav for chapter: horizontal scroll on small */
+  .chapter-tabs-nav {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 2px;
+  }
+  .chapter-tabs-nav::-webkit-scrollbar {
+    display: none;
+  }
+  .chapter-tab-btn {
+    white-space: nowrap;
+  }
+}
+
+/* ── 600px: Large phone ── */
+@media (max-width: 600px) {
+  .app-content-area {
+    padding: 1.25rem 1rem;
+  }
+
+  .site-header {
+    padding: 0 1rem;
+  }
+
+  .hero-title {
+    font-size: 1.8rem;
+    letter-spacing: -0.025em;
+  }
+  .hero-subtitle {
+    font-size: 0.95rem;
+  }
+
+  .chapter-title {
+    font-size: 1.75rem;
+  }
+
+  /* Stats: single column */
+  .overview-stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  /* Hero actions: stack buttons */
+  .hero-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.65rem;
+  }
+  .btn-primary,
+  .btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Role filter: horizontal scroll */
+  .role-pills-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    padding-bottom: 4px;
+  }
+  .role-pills-row::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Chapter meta row: stack */
+  .chapter-meta-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  /* Navigation breadcrumbs: compact */
+  .chapter-nav-breadcrumbs {
+    font-size: 0.74rem;
+  }
+
+  /* Module chapters: hide role tags on small */
+  .chapter-item-tags {
+    display: none;
+  }
+
+  /* Simulator panels */
+  .sim-controls-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  /* Keyboard shortcuts box: hide on mobile */
+  .keyboard-shortcuts-box {
+    display: none;
+  }
+
+  /* Modal: full screen on small phones */
+  .tracker-modal-panel,
+  .search-modal-panel {
+    max-width: 100vw;
+    max-height: 100dvh;
+    border-radius: 20px 20px 0 0;
+    margin: 0;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+  }
+}
+
+/* ── 480px: Small phone ── */
+@media (max-width: 480px) {
+  .hero-title {
+    font-size: 1.55rem;
+  }
+
+  .chapter-title {
+    font-size: 1.55rem;
+  }
+
+  /* Brand sub text: hide on tiny screens */
+  .brand-sub {
+    display: none;
+  }
+
+  /* Mastery pill: ring only, no text */
+  .mastery-pill-text {
+    display: none;
+  }
+  .mastery-pill-btn {
+    padding: 0.3rem;
+  }
+
+  /* Stats: single column */
+  .overview-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Stat pill: horizontal compact */
+  .stat-pill {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.9rem 1.1rem;
+  }
+  .stat-number {
+    font-size: 1.6rem;
+  }
+
+  /* Chapter tabs: icon + short label */
+  .chapter-tab-btn span {
+    display: none;
+  }
+
+  /* Section titles: smaller */
+  .section-title {
+    font-size: 1.3rem;
+  }
+
+  /* TOC pill bar: hidden, too cramped */
+  .floating-toc-pill {
+    display: none;
+  }
+
+  /* Chapter navigation buttons */
+  .chapter-nav-footer {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .chapter-nav-footer .btn-secondary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  /* Resources grid: single column */
+  .resources-grid {
+    grid-template-columns: 1fr;
+  }
+
+  /* Scroll progress line stays */
+}
+
+/* ── 380px: Tiny phone (SE, fold) ── */
+@media (max-width: 380px) {
+  .site-header {
+    padding: 0 0.75rem;
+  }
+  .header-right {
+    gap: 0.3rem;
+  }
+  .icon-action-btn {
+    width: 30px;
+    height: 30px;
+  }
+  .app-content-area {
+    padding: 1rem 0.75rem;
+  }
+  .hero-title {
+    font-size: 1.35rem;
+  }
+  .module-card {
+    border-radius: 12px;
+    padding: 1rem;
   }
 }

@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import type { TargetRole } from './types/curriculum';
 import { ALL_CHAPTERS, getChapterById, getAdjacentChapters } from './data/curriculum';
 import { Header } from './components/Header';
-import { Sidebar } from './components/Sidebar';
+import { Sidebar, MobileBottomNav } from './components/Sidebar';
 import { ChapterView } from './components/ChapterView';
 import { InteractiveTools } from './components/InteractiveTools';
 import { ResourcesView } from './components/ResourcesView';
@@ -19,7 +19,7 @@ export function App() {
     } catch {
       // storage blocked
     }
-    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    return 'light'; // Light is the default; user can toggle to dark
   });
 
   // Navigation State
@@ -93,7 +93,12 @@ export function App() {
 
   // Sync theme attribute to document
   useEffect(() => {
-    document.documentElement.setAttribute('data-theme', theme);
+    // Light is default (:root), dark is opt-in via [data-theme="dark"]
+    if (theme === 'dark') {
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+    }
     try {
       localStorage.setItem('ai-fp-theme', theme);
     } catch {
@@ -273,6 +278,7 @@ export function App() {
           onOpenTracker={() => setIsTrackerOpen(true)}
           isOpen={isSidebarOpen}
           onClose={() => setIsSidebarOpen(false)}
+          onToggleSidebar={() => setIsSidebarOpen(o => !o)}
         />
 
         <main className="app-content-area">
@@ -327,6 +333,13 @@ export function App() {
         solvedProblems={solvedProblems}
         onSelectChapter={handleSelectChapter}
         onResetProgress={handleResetProgress}
+      />
+
+      {/* Mobile bottom tab bar — visible only on ≤768px via CSS */}
+      <MobileBottomNav
+        currentView={currentView}
+        onSelectView={handleSelectView}
+        onToggleSidebar={() => setIsSidebarOpen(o => !o)}
       />
     </div>
   );

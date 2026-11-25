@@ -20,7 +20,10 @@ import {
   Check,
   ChevronDown,
   ChevronRight,
-  Trophy
+  Trophy,
+  Home,
+  Wrench,
+  Library
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -36,6 +39,7 @@ interface SidebarProps {
   onOpenTracker?: () => void;
   isOpen: boolean;
   onClose: () => void;
+  onToggleSidebar: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -50,7 +54,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectRole,
   onOpenTracker,
   isOpen,
-  onClose
+  onClose,
+  onToggleSidebar: _onToggleSidebar
 }) => {
   const filteredChapters = filterChaptersByRole(activeRole);
   const totalChapters = filteredChapters.length;
@@ -298,5 +303,61 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </div>
       </aside>
     </>
+  );
+};
+
+/* =========================================================================
+   MOBILE BOTTOM NAVIGATION BAR
+   iOS-style tab bar visible only on ≤768px via CSS
+   ========================================================================= */
+interface MobileBottomNavProps {
+  currentView: 'chapter' | 'tools' | 'resources' | 'overview';
+  onSelectView: (view: 'chapter' | 'tools' | 'resources' | 'overview') => void;
+  onToggleSidebar: () => void;
+}
+
+export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
+  currentView,
+  onSelectView,
+  onToggleSidebar
+}) => {
+  return (
+    <nav className="mobile-bottom-nav" role="navigation" aria-label="Mobile navigation">
+      <button
+        className={`mobile-nav-btn ${currentView === 'overview' ? 'active' : ''}`}
+        onClick={() => onSelectView('overview')}
+        aria-label="Home"
+      >
+        <Home size={20} />
+        <span>Home</span>
+      </button>
+
+      <button
+        className={`mobile-nav-btn ${currentView === 'chapter' ? 'active' : ''}`}
+        onClick={onToggleSidebar}
+        aria-label="Chapters"
+      >
+        <BookOpen size={20} />
+        <span>Chapters</span>
+      </button>
+
+      <button
+        className={`mobile-nav-btn ${currentView === 'tools' ? 'active' : ''}`}
+        onClick={() => onSelectView('tools')}
+        aria-label="Tools"
+      >
+        <Wrench size={20} />
+        <span>Tools</span>
+      </button>
+
+      <button
+        className={`mobile-nav-btn ${currentView === 'resources' ? 'active' : ''}`}
+        onClick={() => onSelectView('resources')}
+        aria-label="Resources"
+      >
+        <Library size={20} />
+        <span>Resources</span>
+      </button>
+    </nav>
   );
 };
